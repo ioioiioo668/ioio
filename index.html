@@ -288,7 +288,8 @@ async function sayNow(...parts){
   hushAll();
   for(const p of parts){
     if(my !== sayToken) return;
-    if(p && p.blob) await playBlob(p.blob);
+    if(typeof p==='number') await sleep(p);          // 數字＝停頓幾毫秒
+    else if(p && p.blob) await playBlob(p.blob);
     else if(p && p.zy) await zyKey(p.zy);
     else if(isEn(p)) await enPart(p);
     else await speak(p,'zh-TW',0.9);
@@ -300,9 +301,14 @@ const enKey = w => 'en:' + (w.length===1 ? w.toUpperCase() : w.toLowerCase());
 // 'bird. bird. bird.' → 每一段都有爸媽錄音就播錄音，否則交給語音一次唸完
 async function enPart(p){
   const pieces = p.split(/(?<=[.!?])\s+/).map(x=>x.replace(/[.!?]+$/,'').trim()).filter(Boolean);
-  if(pieces.length && pieces.every(w=>recs.has(enKey(w)))){
-    for(let k=0;k<pieces.length;k++){ await playBlob(recs.get(enKey(pieces[k]))); if(k<pieces.length-1) await sleep(250); }
-  } else await speak(p,'en-US',EN_RATE);
+  // 每一段分開唸，中間停 0.5 秒（有錄音就播錄音）
+  const my = sayToken;
+  for(let k=0;k<pieces.length;k++){
+    if(my !== sayToken) return;
+    const key = enKey(pieces[k]);
+    if(recs.has(key)) await playBlob(recs.get(key)); else await speak(pieces[k],'en-US',EN_RATE);
+    if(k<pieces.length-1 && my===sayToken) await sleep(500);
+  }
 }
 
 /* ============ 聲音：錄音與播放 ============ */
@@ -460,7 +466,7 @@ function listenGame(){ go(()=>{
       target = q.c; opts = shuffle([target, ...shuffle(ZY_LIST.filter(c=>c!==target)).slice(0,2)]);
       chip.textContent = 'ㄅㄆㄇ 注音';
       prompt.innerHTML = '<span>聽聽看，是哪一個？</span>';
-      sayTarget = ()=>say({zy:target}, {zy:target}, {zy:target});
+      sayTarget = ()=>say({zy:target}, 500, {zy:target}, 500, {zy:target});
       sayOpt = o => say('這是', {zy:o});
     } else {
       target = q.wd; opts = shuffle([target, ...shuffle(q.th.words.filter(x=>x!==target)).slice(0,2)]);
