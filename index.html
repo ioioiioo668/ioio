@@ -130,7 +130,12 @@ button:focus-visible,select:focus-visible{outline:4px solid var(--berry);outline
 .recgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .rc{border:2px solid var(--line);border-radius:16px;padding:8px 10px;display:flex;align-items:center;gap:8px}
 .rc.has{border-color:var(--leaf);background:#F0FBF5}
-.rc .sym{font-size:34px;font-weight:700;width:1.2em;text-align:center}
+.recgrp{border-top:2px solid var(--ground);padding-top:8px;display:flex;flex-direction:column;gap:10px}
+.recgrp summary{display:flex;justify-content:space-between;align-items:center;font-size:17px;cursor:pointer;padding:6px 2px}
+.recgrp summary span{color:var(--soft);font-variant-numeric:tabular-nums}
+.recgrp > .btn{align-self:flex-start}
+.rc .lbl{flex:1;min-width:0;font-family:var(--display);font-weight:600;font-size:17px;overflow-wrap:anywhere}
+.rc .sym{font-size:34px;font-weight:700;min-width:1.2em;flex:1;text-align:center}
 .rc button{border:0;border-radius:12px;width:40px;height:40px;font-size:18px;background:var(--ground);color:var(--ink);cursor:pointer}
 .rc button.on{background:var(--tomato);color:#fff;animation:pulse 1s infinite}
 .rc button[disabled]{opacity:.3}
@@ -271,11 +276,20 @@ async function say(...parts){
     if(my !== sayToken) return;
     if(p && p.blob) await playBlob(p.blob);
     else if(p && p.zy) await zyKey(p.zy);
-    else if(isEn(p)) await speak(p,'en-US',EN_RATE);
+    else if(isEn(p)) await enPart(p);
     else await speak(p,'zh-TW',0.9);
   }
 }
 const zh = t => say(t);
+// 英文錄音的鑰匙：單一字母用大寫，其他用小寫（'en:A'、'en:apple'、'en:five'）
+const enKey = w => 'en:' + (w.length===1 ? w.toUpperCase() : w.toLowerCase());
+// 'bird. bird. bird.' → 每一段都有爸媽錄音就播錄音，否則交給語音一次唸完
+async function enPart(p){
+  const pieces = p.split(/(?<=[.!?])\s+/).map(x=>x.replace(/[.!?]+$/,'').trim()).filter(Boolean);
+  if(pieces.length && pieces.every(w=>recs.has(enKey(w)))){
+    for(let k=0;k<pieces.length;k++){ await playBlob(recs.get(enKey(pieces[k]))); if(k<pieces.length-1) await sleep(250); }
+  } else await speak(p,'en-US',EN_RATE);
+}
 
 /* ============ 聲音：錄音與播放 ============ */
 let blobUrl = null;
@@ -331,22 +345,22 @@ const idb = (()=>{
     keys: () => tx('readonly', s=>s.getAllKeys()).catch(()=>[])
   };
 })();
-const zyRecs = new Map();
+const recs = new Map();
 // 以 {type, data:ArrayBuffer} 存（Safari 存 Blob 有時不穩）
 const saveRec = async (k, blob) => { try{ await idb.put(k, {type: blob.type, data: await blob.arrayBuffer()}); }catch(e){} };
-idb.keys().then(async ks=>{ for(const k of (ks||[])){ const v = await idb.get(k); if(v && v.data) zyRecs.set(k, new Blob([v.data], {type: v.type||'audio/mp4'})); } });
+idb.keys().then(async ks=>{ for(const k of (ks||[])){ const v = await idb.get(k); if(v && v.data) recs.set(k, new Blob([v.data], {type: v.type||'audio/mp4'})); } });
 
 /* ============ 注音怎麼唸 ============ */
 // 模式：'homo' 用同音字（玻）／'symbol' 讓語音直接唸符號（ㄅ）。有爸媽錄音時一律用錄音。
 let zyMode = lsGet('zyMode', 'homo');
 const zyText = c => zyMode==='symbol' ? c : ZY[c][0];
 function zyKey(c){                      // 只唸注音本身
-  if(zyRecs.has(c)) return playBlob(zyRecs.get(c));
+  if(recs.has(c)) return playBlob(recs.get(c));
   return speak(zyText(c), 'zh-TW', 0.75);
 }
 function zySay(c){                      // 「ㄅ，爸爸的ㄅ」
   const word = ZY[c][1];
-  if(zyRecs.has(c)) return say({zy:c}, word+'的', {zy:c});
+  if(recs.has(c)) return say({zy:c}, word+'的', {zy:c});
   return say(`${zyText(c)}，${word}的${zyText(c)}`);
 }
 
@@ -806,6 +820,83 @@ function stickerBook(){ go(()=>{
   zh(n ? `你有 ${n} 張貼紙` : '答對題目就能拿到星星，五顆星換一張貼紙');
 })}
 
+/* ============ 爸媽錄音：清單、格子、一個一個錄 ============ */
+const REC_GROUPS = (()=>{
+  const g = [{name:'注音', items: ZY_LIST.map(c=>({key:c, label:c, big:true, hint:`${ZY[c][2]} ${ZY[c][1]}`}))}];
+  THEMES.forEach(t=>g.push({name:'英文・'+t.name, items: t.words.map(w=>({key:enKey(w.en), label:w.en, hint:`${w.e} ${w.zh}`}))}));
+  g.push({name:'英文・字母 A–Z', items:[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(c=>({key:enKey(c), label:c, big:true, hint:'字母'}))});
+  g.push({name:'英文・數字 one–ten', items: EN_NUM.slice(1).map((w,k)=>({key:enKey(w), label:w, hint:String(k+1)}))});
+  const have = new Set(THEMES.flatMap(t=>t.words.map(w=>w.en.toLowerCase())));
+  const extra = [...new Set(Object.values(HINT))].filter(w=>!have.has(w.toLowerCase()));
+  g.push({name:'英文・字母例字', items: extra.map(w=>({key:enKey(w), label:w, hint:'描字母時用'}))});
+  return g;
+})();
+let recBusy = null, recStarting = false;
+// 錄一段，存起來，播放一次。onState(text) 回報狀態。
+async function recordKey(key, label, onState){
+  if(recStarting) return;
+  if(recBusy){ if(recBusy.key===key) recBusy.ctl.stop(); return; }
+  if(!canRecord()){ onState('這個瀏覽器不能錄音。請用 Safari 開遊戲網址。'); return; }
+  recStarting = true; onState('準備中…', 'starting');
+  try{ recBusy = {key, ctl: await startRecording(3000)}; }
+  catch(e){ recStarting = false; onState('沒有麥克風權限。請用 Safari 開遊戲網址，並允許使用麥克風。'); return; }
+  recStarting = false;
+  onState(`錄音中：請唸「${label}」`, 'rec');
+  const blob = await recBusy.ctl.done; recBusy = null;
+  if(!blob){ onState('沒有錄到聲音', 'idle'); return; }
+  recs.set(key, blob); saveRec(key, blob);
+  onState(`「${label}」錄好了`, 'saved');
+  await playBlob(blob);
+}
+function recCell(it){
+  const cell = el('div','rc');
+  cell.appendChild(el('span', it.big ? 'sym' : 'lbl', escH(it.label)));
+  const rb = el('button','','●'), pb = el('button','','▶'), db = el('button','','✕');
+  rb.setAttribute('aria-label','錄 '+it.label); pb.setAttribute('aria-label','播放 '+it.label); db.setAttribute('aria-label','刪除 '+it.label);
+  const sync = ()=>{ cell.classList.toggle('has', recs.has(it.key)); pb.disabled = db.disabled = !recs.has(it.key); };
+  sync();
+  rb.onclick = ()=>recordKey(it.key, it.label, (msg, st)=>{
+    rb.classList.toggle('on', st==='rec'); rb.textContent = st==='rec' ? '■' : '●';
+    cell.title = msg; if(st==='saved' || st==='idle') sync();
+  });
+  pb.onclick = ()=>{ if(recs.has(it.key)) playBlob(recs.get(it.key)); };
+  db.onclick = async ()=>{ recs.delete(it.key); await idb.del(it.key); sync(); };
+  cell.append(rb,pb,db);
+  return cell;
+}
+function recordWizard(g){ go(()=>{
+  setTitle('錄音：'+g.name);
+  const w = el('div','wrap'); stage.appendChild(w);
+  let k = Math.max(0, g.items.findIndex(it=>!recs.has(it.key)));
+  const prog = el('div','chip'); const big = el('div','big'); const status = el('div','status');
+  const row = el('div','row'); const row2 = el('div','row');
+  const recB = el('button','btn red','● 錄音'); const playB = el('button','btn plain','▶ 聽'); const ttsB = el('button','btn plain','🔈 iPad 怎麼唸');
+  const prevB = el('button','btn plain','◀ 上一個'); const nextB = el('button','btn green','下一個 ▶'); const doneB = el('button','btn plain','完成');
+  row.append(recB, playB, ttsB); row2.append(prevB, nextB, doneB);
+  w.append(prog, big, status, row, row2);
+  const isZ = it => !!ZY[it.key];
+  function show(){
+    const it = g.items[k];
+    const n = g.items.filter(x=>recs.has(x.key)).length;
+    prog.textContent = `第 ${k+1} / ${g.items.length} 個・已錄 ${n} 個`;
+    big.innerHTML = `<div class="${isZ(it)?'zybig':'word'}">${escH(it.label)}</div><div class="zh">${escH(it.hint||'')}</div>` + (recs.has(it.key) ? '<div class="zh">✅ 已經錄好</div>' : '');
+    playB.disabled = !recs.has(it.key);
+    status.textContent = recs.has(it.key) ? '可以按 ▶ 聽，或按 ● 重錄' : '按 ● 錄音，唸完再按一次（最長 3 秒）';
+    prevB.disabled = k===0; nextB.textContent = k===g.items.length-1 ? '全部錄完 ✓' : '下一個 ▶';
+  }
+  recB.onclick = ()=>{ const it=g.items[k]; recordKey(it.key, it.label, (msg, st)=>{
+    status.textContent = msg; recB.classList.toggle('rec', st==='rec'); recB.textContent = st==='rec' ? '■ 唸完了' : '● 錄音';
+    if(st==='saved'){ show(); status.textContent = msg + '，滿意就按「下一個」'; }
+  }); };
+  playB.onclick = ()=>{ const it=g.items[k]; if(recs.has(it.key)) playBlob(recs.get(it.key)); };
+  ttsB.onclick = ()=>{ const it=g.items[k]; if(isZ(it)) speak(zyText(it.key),'zh-TW',0.75); else speak(it.label,'en-US',EN_RATE); };
+  prevB.onclick = ()=>{ if(recBusy) return; if(k>0){ k--; show(); } };
+  nextB.onclick = ()=>{ if(recBusy) return; if(k<g.items.length-1){ k++; show(); } else settings(); };
+  doneB.onclick = ()=>{ if(recBusy) recBusy.ctl.stop(); settings(); };
+  cleanup = ()=>{ if(recBusy) recBusy.ctl.stop(); };
+  show();
+})}
+
 /* ============ 爸媽設定 ============ */
 function settings(){ go(()=>{
   setTitle('爸媽設定');
@@ -847,34 +938,21 @@ function settings(){ go(()=>{
   });
   w.appendChild(s2);
 
-  // 錄注音
-  const s3 = el('div','sec','<h2>爸媽錄注音</h2><p>按 ● 錄一個注音（例如「ㄅ」，最長 2.5 秒），再按 ▶ 聽聽看。錄好的注音，遊戲裡都會用你們的聲音唸。錄音只存在這台裝置的瀏覽器裡。</p>');
-  const grid = el('div','recgrid'); const rstat = el('div','tlog');
-  let busy = null, starting = false;
-  ZY_LIST.forEach(c=>{
-    const cell = el('div','rc'+(zyRecs.has(c)?' has':''));
-    cell.appendChild(el('span','sym',c));
-    const rb = el('button','','●'), pb = el('button','','▶'), db = el('button','','✕');
-    rb.setAttribute('aria-label','錄 '+c); pb.setAttribute('aria-label','播放 '+c); db.setAttribute('aria-label','刪除 '+c);
-    const sync = ()=>{ cell.classList.toggle('has', zyRecs.has(c)); pb.disabled = db.disabled = !zyRecs.has(c); };
-    sync();
-    rb.onclick = async ()=>{
-      if(starting) return;
-      if(busy && busy.c===c){ busy.ctl.stop(); return; }
-      if(busy) return;
-      if(!canRecord()){ rstat.textContent='這個瀏覽器不能錄音。請用 Safari 開遊戲網址。'; return; }
-      starting = true; rstat.textContent='準備中…';
-      try{ busy = {c, ctl: await startRecording(2500)}; starting = false; }catch(e){ starting = false; busy=null; rstat.textContent='沒有麥克風權限。請用 Safari 開遊戲網址，並允許使用麥克風。'; return; }
-      rb.classList.add('on'); rb.textContent='■'; rstat.textContent=`錄音中：請唸「${c}」`;
-      const blob = await busy.ctl.done; busy=null; rb.classList.remove('on'); rb.textContent='●';
-      if(blob){ zyRecs.set(c, blob); sync(); rstat.textContent=`「${c}」錄好了`; saveRec(c, blob); await playBlob(blob); }
-      else { rstat.textContent='沒有錄到聲音'; sync(); }
-    };
-    pb.onclick = ()=>{ if(zyRecs.has(c)) playBlob(zyRecs.get(c)); };
-    db.onclick = async ()=>{ zyRecs.delete(c); await idb.del(c); sync(); rstat.textContent=`已刪除「${c}」的錄音`; };
-    cell.append(rb,pb,db); grid.appendChild(cell);
+  // 爸媽錄音（注音、英文）
+  const s3 = el('div','sec','<h2>爸媽錄音</h2><p>錄好的字，遊戲裡都會改用你們的聲音；沒錄的還是用 iPad 的語音。錄音只存在這台裝置的瀏覽器裡。最方便的是按「一個一個錄」，照順序錄下去。</p>');
+  const total = REC_GROUPS.reduce((a,g)=>a+g.items.length,0);
+  const done = REC_GROUPS.reduce((a,g)=>a+g.items.filter(it=>recs.has(it.key)).length,0);
+  s3.appendChild(el('div','tlog',`已錄 ${done} / ${total} 個`));
+  REC_GROUPS.forEach(g=>{
+    const d = document.createElement('details'); d.className='recgrp';
+    const n = g.items.filter(it=>recs.has(it.key)).length;
+    d.innerHTML = `<summary><b>${escH(g.name)}</b><span>${n} / ${g.items.length}</span></summary>`;
+    const wiz = el('button','btn small green','● 一個一個錄');
+    wiz.onclick = ()=>recordWizard(g);
+    const grid = el('div','recgrid');
+    d.addEventListener('toggle', ()=>{ if(d.open && !grid.childElementCount) g.items.forEach(it=>grid.appendChild(recCell(it))); });
+    d.append(wiz, grid); s3.appendChild(d);
   });
-  s3.append(grid, rstat);
   w.appendChild(s3);
 
   // 進度
