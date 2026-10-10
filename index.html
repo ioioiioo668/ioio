@@ -220,9 +220,10 @@ function showSticker(s){
   pop.innerHTML = '';
   const card = el('div','card', `<div class="sticker">${s}</div><b>得到新貼紙！</b><div class="sub">放進貼紙本了</div>`);
   const ok = el('button','btn green','好棒！');
-  ok.onclick = ()=>{ pop.hidden = true; };
+  let release; popWait = new Promise(r=>release=r);
+  ok.onclick = ()=>{ pop.hidden = true; popWait = null; release(); };
   card.appendChild(ok); pop.appendChild(card); pop.hidden = false;
-  zh('你得到一張新貼紙！');
+  sayNow('你得到一張新貼紙！');
 }
 function cheer(t){ const b=$('#cheerTxt'); b.textContent=t||pick(['棒！','好厲害！','Yes!','讚！']); b.classList.remove('go'); void b.offsetWidth; b.classList.add('go'); }
 
@@ -252,6 +253,7 @@ function speak(text, lang='en-US', rate=0.8){
     if(!('speechSynthesis' in window)) return res();
     try{
       const ss = speechSynthesis;
+      try{ player.pause() }catch(e){}               // 錄音和語音不能同時出聲
       const busy = ss.speaking || ss.pending;
       if(busy) ss.cancel();
       try{ ss.resume() }catch(e){}
@@ -260,18 +262,30 @@ function speak(text, lang='en-US', rate=0.8){
       u.lang = lang; u.rate = rate; u.pitch = 1.1; u.volume = 1;
       const pv = pickVoice(lang); if(pv){ u.voice = pv; u.lang = pv.lang; }
       let done=false; const fin=()=>{ if(!done){done=true;res()} };
-      u.onend=fin; u.onerror=fin; setTimeout(fin, 2500 + text.length*350);
+      u.onend=fin; u.onerror=fin; setTimeout(fin, 4000 + text.length*500);
       if(busy) setTimeout(()=>ss.speak(u), 120); else ss.speak(u);
     }catch(e){ res() }
   });
 }
 let sayToken = 0;
-function stopTalking(){ sayToken++; try{ player.pause() }catch(e){} }
+// 讓所有聲音停下來（語音合成＋錄音播放）
+function hushAll(){
+  try{ const ss = speechSynthesis; if(ss.speaking || ss.pending) ss.cancel(); }catch(e){}
+  try{ player.pause() }catch(e){}
+}
+function stopTalking(){ sayToken++; hushAll(); }
+let popWait = null;   // 貼紙彈窗開著時，遊戲的聲音先等一下
 const isEn = t => /^[A-Za-z0-9 .,!?'-]+$/.test(t);
 // say('找出','bird') → 中文的部分用中文唸、英文的部分用英文唸；新的一句會打斷舊的
 // 也可以放 {zy:'ㄅ'}（唸注音）或 {blob}（播放錄音）
 async function say(...parts){
+  if(popWait) await popWait;
+  return sayNow(...parts);
+}
+// 一次只會有一句：新的一句開始，舊的（不管是語音還是錄音）立刻停掉
+async function sayNow(...parts){
   const my = ++sayToken;
+  hushAll();
   for(const p of parts){
     if(my !== sayToken) return;
     if(p && p.blob) await playBlob(p.blob);
@@ -296,11 +310,14 @@ let blobUrl = null;
 function playBlob(blob){
   return new Promise(res=>{
     try{
+      try{ const ss = speechSynthesis; if(ss.speaking || ss.pending) ss.cancel(); }catch(e){}
+      try{ player.pause() }catch(e){}
       if(blobUrl) URL.revokeObjectURL(blobUrl);
       blobUrl = URL.createObjectURL(blob);
       player.src = blobUrl;
       let done=false; const fin=()=>{ if(!done){ done=true; res(); } };
-      player.onended = fin; player.onerror = fin;
+      player.onended = fin; player.onerror = fin; player.onpause = null;
+      player.onplaying = ()=>{ player.onpause = fin; };   // 開始播之後被打斷，也算結束
       setTimeout(fin, 8000);
       const p = player.play(); if(p) p.catch(fin);
     }catch(e){ res(); }
@@ -463,7 +480,7 @@ function listenGame(){ go(()=>{
         if(locked) return;
         if(o===target){
           locked = true; c.classList.add('ok'); addStar(); cheer();
-          await capped(isZ ? zySay(o) : say('對了！', o.en), 3500);
+          await capped(isZ ? zySay(o) : say('對了！', o.en), 7000);
           setTimeout(round, 500);
         } else { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); await sayOpt(o); sayTarget(); }
       };
@@ -518,7 +535,7 @@ function repeatGame(){ go(()=>{
     if(advancing) return; advancing = true;
     showJudge(false); addStar(); cheer(); status.textContent = '唸得好棒！';
     const it = cur();
-    await capped(it.t==='zy' ? say('好棒！', {zy:it.c}) : say('好棒！', it.en), 3500);
+    await capped(it.t==='zy' ? say('好棒！', {zy:it.c}) : say('好棒！', it.en), 7000);
     setTimeout(next, 600);
   }
   function stopRec(){ if(recCtl){ recCtl.stop(); } }
@@ -550,10 +567,14 @@ function repeatGame(){ go(()=>{
     micB.classList.remove('rec'); micB.textContent = '🎤 我來唸';
     if(!blob){ status.textContent = '沒有錄到聲音，再試一次'; return; }
     lastBlob = blob;
+    const myItem = i, myTok = ++sayToken;          // 中途換題或按了別的聲音，就不要再接著唸
+    const still = ()=> i===myItem && sayToken===myTok && document.body.contains(micB);
     status.textContent = '聽聽你唸的 👂';
     await playBlob(blob);
+    if(!still()) return;
     status.textContent = '再聽一次老師唸';
-    await sleep(300); await sayCur();
+    await sleep(300); if(!still()) return;
+    await sayCur(); if(i!==myItem || !document.body.contains(micB)) return;
     status.textContent = '一樣嗎？唸得好就按 ⭐';
     showJudge(true);
   };
@@ -758,7 +779,7 @@ function traceGame(){ go(()=>{
     addStar(); cheer();
     status.textContent = '描好了！';
     const c = ch();
-    await capped(isZy(c) ? say('好棒！', {zy:c}) : say('好棒！', /\d/.test(c)?EN_NUM[+c]:c+'.'), 3000);
+    await capped(isZy(c) ? say('好棒！', {zy:c}) : say('好棒！', /\d/.test(c)?EN_NUM[+c]:c+'.'), 7000);
     setTimeout(()=>{ if(done){ idx=(idx+1)%ITEMS.length; setup(); startItem(); } }, 600);
   }
   draw.addEventListener('pointerdown', e=>{
@@ -814,7 +835,7 @@ function mathGame(){ go(()=>{
           locked=true; b.classList.add('ok');
           const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = n;
           addStar(); cheer('答對了！');
-          await capped(say('答對了！', EN_NUM[n]+'.'), 3500); setTimeout(round,500);
+          await capped(say('答對了！', EN_NUM[n]+'.'), 7000); setTimeout(round,500);
         }
         else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); zh(mode%2?'再數數看':'再算算看'); }
       };
