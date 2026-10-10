@@ -42,6 +42,9 @@ button:focus-visible{outline:4px solid var(--berry);outline-offset:3px}
 .tile b{font-size:clamp(22px,5.5vw,34px);font-weight:800}
 .tile small{font-family:var(--display);font-size:clamp(14px,3.4vw,18px);font-weight:600;opacity:.9;letter-spacing:.04em}
 .t1{background:var(--tomato)} .t2{background:var(--berry)} .t3{background:var(--leaf)} .t4{background:#F0A400}
+.soundtest{max-width:760px;width:100%;margin:16px auto 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.soundtest .btn{font-size:18px;padding:12px 18px}
+.tlog{font-size:15px;color:var(--ink);text-align:center;line-height:1.6;user-select:text;-webkit-user-select:text}
 .note{max-width:760px;margin:12px auto 0;color:var(--soft);font-size:13px;line-height:1.6;text-align:center}
 
 /* shared game bits */
@@ -162,9 +165,8 @@ function speak(text, lang='en-US', rate=0.8){
       if(!voices.length) loadVoices();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang; u.rate = rate; u.pitch = 1.1;
-      const norm = v => v.lang.replace('_','-');
-      const v = voices.find(v=>norm(v)===lang) || voices.find(v=>norm(v).startsWith(lang.slice(0,2)));
-      if(v) u.voice = v;
+      // 不指定 voice：iOS 會列出尚未下載的語音，選到就完全沒聲音。只設 lang，讓系統用已安裝的預設語音
+      u.volume = 1;
       let done=false; const fin=()=>{ if(!done){done=true;res()} };
       u.onend=fin; u.onerror=fin; setTimeout(fin, 6000);
       // iOS Safari 在 cancel() 後立刻 speak() 有時會被吞掉，稍等一下再唸
@@ -173,6 +175,39 @@ function speak(text, lang='en-US', rate=0.8){
   });
 }
 const zh = (t, r=0.9) => speak(t,'zh-TW',r);
+
+/* 聲音測試：一個嗶聲（測喇叭）＋一句語音（測語音合成），結果直接顯示在畫面上 */
+function soundTest(logEl){
+  return ()=>{
+    const lines = [];
+    const show = s => { lines.push(s); logEl.textContent = lines.join('｜'); };
+    // 1. 嗶聲
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ac = new AC(); const o = ac.createOscillator(); const g = ac.createGain();
+      o.frequency.value = 660; g.gain.value = 0.2; o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime + 0.25);
+      show('嗶聲：已播放');
+    }catch(e){ show('嗶聲：失敗 '+e.name); }
+    // 2. 語音（在點擊當下同步呼叫）
+    if(!('speechSynthesis' in window)){ show('語音：此瀏覽器不支援'); return; }
+    const ss = speechSynthesis;
+    let vs = []; try{ vs = ss.getVoices() }catch(e){}
+    const zhN = vs.filter(v=>/zh/i.test(v.lang)).length, enN = vs.filter(v=>/en/i.test(v.lang)).length;
+    show(`語音數 ${vs.length}（中 ${zhN}／英 ${enN}）`);
+    try{
+      ss.cancel(); ss.resume();
+      const u = new SpeechSynthesisUtterance('Hello! 你好！');
+      u.lang = 'zh-TW'; u.rate = 0.9; u.volume = 1;
+      let started = false;
+      u.onstart = ()=>{ started = true; show('語音：開始唸了'); };
+      u.onend = ()=>show('語音：唸完了');
+      u.onerror = e=>show('語音錯誤：'+(e.error||'unknown'));
+      ss.speak(u);
+      setTimeout(()=>{ if(!started) show('語音：3 秒沒反應'+(ss.speaking?'（卡在唸的狀態）':'')+(ss.pending?'（排隊中）':'')); }, 3000);
+    }catch(e){ show('語音：例外 '+e.name); }
+  };
+}
 
 /* icons */
 const ICON = {
@@ -198,6 +233,12 @@ function home(){ go(()=>{
     g.appendChild(b);
   });
   stage.appendChild(g);
+  const tb = el('div','soundtest');
+  const tbtn = el('button','btn plain','🔈 測試聲音');
+  const tlog = el('div','tlog','沒聲音時請按這裡，並把下面顯示的文字告訴我');
+  tbtn.onclick = soundTest(tlog);
+  tb.append(tbtn, tlog);
+  stage.appendChild(tb);
   stage.appendChild(el('p','note','請開啟聲音。「跟我唸」會試著使用麥克風；不能用時，改由爸爸媽媽按按鈕評分。'));
 })}
 
