@@ -372,7 +372,7 @@ function repeatGame(){ go(()=>{
   const lev=(a,b)=>{const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]};
   const cur = ()=>ITEMS[i];
   const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : speak(it.en,'en-US',0.6); };
-  function show(){
+  let show = function(){
     const it = cur(); extra.innerHTML=''; setStatus('先聽，再跟著唸');
     if(it.t==='zy'){
       const [, word, emo] = ZY[it.c];
@@ -396,43 +396,83 @@ function repeatGame(){ go(()=>{
     ok.onclick = success; again.onclick = sayCur;
     r.append(ok, again); p.appendChild(r); extra.appendChild(p);
   }
-  function judge(results){
+  // 小朋友常見的唸法、辨識常聽成的字，都算對
+  const EN_OK = {
+    apple:'apples app appo happy apo upple',cat:'cats kat kit cut cap cad cart kate',dog:'dogs doc dug dock dawg talk',
+    fish:'fishes fist fresh fits fit fi fis',sun:'son some sum sung song sunny',car:'cars card call core cow ca caw',
+    ball:'balls bowl bo boll bull bow pole bore',egg:'eggs ag ache edge eg ek',bird:'birds bert burt bud bed word heard third bert',
+    banana:'bananas nana banna',star:'stars starr stop store sta',cake:'cakes kate cape kick take kay',
+    duck:'ducks doc dock dark duke dug',tree:'trees three free tray tea tre',milk:'milks mill meal mook milky mil'
+  };
+  // 粗略的「發音骨架」：去母音、把台灣小朋友容易混的音合併
+  const skel = w => w.toLowerCase().replace(/ph/g,'f').replace(/th/g,'s').replace(/ck|c|q/g,'k').replace(/v/g,'b').replace(/z/g,'s')
+                     .replace(/r/g,'l').replace(/(.)\1+/g,'$1').replace(/(?!^)[aeiouy]/g,'');
+  function enMatch(word, target){
+    if(!word) return false;
+    if(word===target || word.replace(/s$/,'')===target) return true;
+    if((EN_OK[target]||'').split(' ').includes(word)) return true;
+    const tol = target.length<=3 ? 1 : Math.floor(target.length/3)+1;
+    if(lev(word,target) <= tol && word[0]===target[0]) return true;
+    if(skel(word)===skel(target)) return true;
+    return false;
+  }
+  function judge(texts){
     const it = cur();
-    const raw = Array.from(results).map(a=>a.transcript.trim());
+    const raw = texts.map(t=>t.trim()).filter(Boolean);
     if(it.t==='zy'){
       const [s, word, , homo] = ZY[it.c];
       const ok = raw.some(t => t.includes(it.c) || t.includes(word) || [...(homo+s)].some(h=>t.includes(h)));
       return {ok, heard: raw[0]};
     }
-    const alts = raw.map(t=>t.toLowerCase().replace(/[^a-z ]/g,'').trim());
+    const alts = raw.map(t=>t.toLowerCase().replace(/[^a-z ]/g,' ').trim());
     const target = it.en;
-    const ok = alts.some(t=> t.split(' ').some(x=>x===target || (target.length>3 && lev(x,target)<=1)) || t.includes(target));
+    const ok = alts.some(t => t.replace(/\s/g,'').includes(target) || t.split(/\s+/).some(x=>enMatch(x,target)));
     return {ok, heard: alts[0]};
   }
+  let tries = 0;
+  const _show = show;
+  show = function(){ tries = 0; _show(); };
   listenB.onclick = sayCur;
   prevB.onclick = ()=>{ i=(i-1+ITEMS.length)%ITEMS.length; show(); };
   nextB.onclick = ()=>{ i=(i+1)%ITEMS.length; show(); };
   micB.onclick = ()=>{
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!SR || micBlocked){ setStatus('現在請大聲唸出來！'); parentPanel(micBlocked?'':'這台裝置不支援語音辨識。'); return; }
+    if(rec){ try{rec.abort()}catch(e){} rec=null; }
     try{
       speechSynthesis.cancel();
-      rec = new SR(); rec.lang = cur().t==='zy' ? 'zh-TW' : 'en-US'; rec.interimResults=false; rec.maxAlternatives=5;
-      let got=false;
-      rec.onresult = e=>{
-        got=true;
-        const {ok, heard} = judge(e.results[0]);
-        if(ok) success();
-        else { setStatus('聽起來像「{H}」，再試一次', heard||'…'); sayCur(); }
-      };
-      rec.onerror = e=>{
+      const r = new SR(); rec = r;
+      r.lang = cur().t==='zy' ? 'zh-TW' : 'en-US';
+      r.interimResults = true;      // 一邊說一邊比對，聽到對的就馬上過關
+      r.continuous = true;          // 小朋友會停頓，不要一停就結束
+      r.maxAlternatives = 5;
+      let finished = false, heardAny = '';
+      const finish = (ok)=>{
+        if(finished) return; finished = true;
+        clearTimeout(timer); try{ r.stop() }catch(e){}
         micB.classList.remove('listening');
-        if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){ micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。'); }
-        else if(e.error==='no-speech'){ setStatus('沒聽到聲音，再大聲一點'); }
-        else { setStatus('沒聽清楚，再試一次'); }
+        if(ok){ success(); return; }
+        tries++;
+        if(tries >= 3){ setStatus('很接近了！'); success(); return; }   // 試三次就給過，保持信心
+        if(heardAny) setStatus('聽起來像「{H}」，再試一次', heardAny); else setStatus('沒聽到聲音，再大聲一點');
+        sayCur();
       };
-      rec.onend = ()=>{ micB.classList.remove('listening'); if(!got && status.dataset.t==='在聽喔…') setStatus('沒聽清楚，再試一次'); };
-      rec.start(); micB.classList.add('listening'); setStatus('在聽喔…');
+      const timer = setTimeout(()=>finish(false), 6000);
+      r.onresult = e=>{
+        const texts = [];
+        for(let k=e.resultIndex;k<e.results.length;k++) for(let a=0;a<e.results[k].length;a++) texts.push(e.results[k][a].transcript);
+        const {ok, heard} = judge(texts);
+        if(heard) heardAny = heard;
+        if(ok) finish(true);
+      };
+      r.onerror = e=>{
+        if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){
+          finished = true; clearTimeout(timer); micB.classList.remove('listening');
+          micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。');
+        } else if(e.error!=='aborted') finish(false);
+      };
+      r.onend = ()=>finish(false);
+      r.start(); micB.classList.add('listening'); setStatus('請說！在聽喔…');
     }catch(err){ micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。'); }
   };
   cleanup = ()=>{ try{rec&&rec.abort()}catch(e){} };
