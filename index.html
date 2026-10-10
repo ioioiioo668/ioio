@@ -497,7 +497,60 @@ function listenGame(){ go(()=>{
   round();
 })}
 
-/* ============ 2. 跟我唸（錄音回放） ============ */
+/* ============ 2. 跟我唸（語音辨識自動評分） ============ */
+// 注音：辨識常聽成的同音字，聽到這些也算對
+const ZY_HOMO = {
+  'ㄅ':'玻波播剝撥伯博','ㄆ':'坡潑婆破','ㄇ':'摸模魔磨默','ㄈ':'佛','ㄉ':'得德的','ㄊ':'特','ㄋ':'呢訥','ㄌ':'勒樂了',
+  'ㄍ':'哥歌個各格鴿','ㄎ':'科可課顆渴棵','ㄏ':'喝和河合賀','ㄐ':'機雞基幾記','ㄑ':'欺七期其起氣','ㄒ':'希西吸洗系',
+  'ㄓ':'知之只直紙蜘','ㄔ':'吃池遲尺','ㄕ':'詩師十是事獅','ㄖ':'日','ㄗ':'資字子自','ㄘ':'疵次此詞刺','ㄙ':'思絲四死私司',
+  'ㄧ':'衣一醫依','ㄨ':'烏屋五無午','ㄩ':'迂魚雨玉於','ㄚ':'啊阿','ㄛ':'喔哦噢','ㄜ':'鵝餓額惡呃','ㄝ':'耶也夜葉',
+  'ㄞ':'哀愛矮挨','ㄟ':'欸誒','ㄠ':'凹奧熬襖','ㄡ':'歐偶嘔','ㄢ':'安按暗岸','ㄣ':'恩嗯','ㄤ':'昂','ㄥ':'鞥','ㄦ':'兒二而耳'
+};
+// 英文：小朋友常見的唸法、辨識常聽成的字
+const EN_OK = {
+  apple:'apples app happy',cat:'cats kat cut cap',dog:'dogs doc dug dock',fish:'fishes fist fit',bird:'birds bert burt bud word',
+  duck:'ducks dock duke',pig:'pigs big peak',cow:'cows kao cal',horse:'horses house hose',lion:'lions line',tiger:'tigers',
+  monkey:'monkeys',rabbit:'rabbits',frog:'frogs fog',bear:'bears bare bed',elephant:'elephants',banana:'bananas nana',
+  grapes:'grape great grapes',orange:'oranges orang',lemon:'lemons',peach:'peaches pitch',cherry:'cherries chair',
+  strawberry:'strawberries',watermelon:'watermelons',pear:'pair pears bear',egg:'eggs ag edge',cake:'cakes kate cape',
+  milk:'mill meal milky',bread:'bred brad',rice:'rise rices',cookie:'cookies',pizza:'pizzas',juice:'juices',candy:'candies',
+  car:'cars card call',bus:'buses boss',bike:'bikes back',train:'trains rain',boat:'boats both but',plane:'planes plan',
+  truck:'trucks track',taxi:'taxis',red:'read rad',blue:'blew blu',green:'greens grin',yellow:'yello',purple:'people',
+  black:'block back',white:'what wide',brown:'brain',eye:'eyes i aye hi',ear:'ears year here',nose:'knows no',mouth:'mouse mouse',
+  hand:'hands and',foot:'feet food put',sun:'son some sum',moon:'moon mean',star:'stars start',tree:'trees three free',
+  flower:'flowers flour',rain:'rainy ring'
+};
+const skel = w => w.toLowerCase().replace(/ph/g,'f').replace(/th/g,'s').replace(/ck|c|q/g,'k').replace(/v/g,'b').replace(/z/g,'s')
+                   .replace(/r/g,'l').replace(/(.)\1+/g,'$1').replace(/(?!^)[aeiouy]/g,'');
+const lev=(a,b)=>{const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]};
+function enWordOk(word, target){
+  if(!word) return false;
+  if(word===target || word.replace(/e?s$/,'')===target) return true;
+  if((EN_OK[target]||'').split(' ').includes(word)) return true;
+  const tol = Math.max(1, Math.floor(target.length/4));   // 4 個字母以下只能差 1 個
+  const d = lev(word,target);
+  if(word[0]===target[0] && d <= tol) return true;
+  if(target.length>2 && skel(word)===skel(target) && d <= tol+1) return true;
+  return false;
+}
+// 小朋友唸的對不對（texts：辨識給的幾個可能答案）
+function speechOk(it, texts){
+  const raw = texts.map(t=>String(t||'').trim()).filter(Boolean);
+  if(it.t==='zy'){
+    const c = it.c, word = ZY[c][1], homo = ZY_HOMO[c] + ZY[c][0];
+    return raw.some(t => t.includes(c) || t.includes(word) || [...homo].some(h=>t.includes(h)));
+  }
+  const target = it.en.toLowerCase(), tJoin = target.replace(/\s/g,'');
+  return raw.some(t=>{
+    const s = t.toLowerCase().replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();
+    if(!s) return false;
+    if(s.replace(/\s/g,'').includes(tJoin)) return true;
+    if(target.includes(' ')) return lev(s.replace(/\s/g,''), tJoin) <= 2;
+    return s.split(' ').some(x=>enWordOk(x, target));
+  });
+}
+const setAudioSession = t => { try{ if(navigator.audioSession) navigator.audioSession.type = t; }catch(e){} };
+
 function repeatGame(){ go(()=>{
   setTitle('跟我唸');
   const w = el('div','wrap'); stage.appendChild(w);
@@ -508,22 +561,20 @@ function repeatGame(){ go(()=>{
     shuffle(ZY_LIST).slice(0,3).forEach(c=>queue.push({t:'zy', c}));
   }
   const chip = el('div','chip'); const big = el('div','big'); const status = el('div','status');
-  const row = el('div','row'); const judge = el('div','row');
-  w.append(chip, big, status, row, judge);
+  const tries = el('div','steps'); const row = el('div','row');
+  w.append(chip, big, tries, status, row);
   const listenB = el('button','btn plain','🔊 聽');
   const micB = el('button','btn red','🎤 我來唸');
   const prevB = el('button','btn plain','◀'); const nextB = el('button','btn plain','▶');
   prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
   row.append(prevB, listenB, micB, nextB);
-  const goodB = el('button','btn green','⭐ 唸得很好');
-  const againB = el('button','btn plain','🔁 再唸一次');
-  judge.append(goodB, againB);
-  let recCtl = null, recStarting = false, lastBlob = null, advancing = false;
+  const MAX_TRY = 3;
+  let rec = null, fails = 0, advancing = false;
   const cur = ()=>items[i];
   const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : say(it.en); };
-  function showJudge(on){ judge.hidden = !on; }
+  const renderTries = ()=>{ tries.innerHTML = Array.from({length:MAX_TRY},(_,k)=>`<i class="${k<fails?'cur':''}"></i>`).join(''); };
   function show(){
-    const it = cur(); lastBlob = null; showJudge(false); advancing = false;
+    const it = cur(); fails = 0; advancing = false; renderTries();
     status.textContent = '先聽，再按 🎤 跟著唸';
     if(it.t==='zy'){
       chip.textContent = 'ㄅㄆㄇ 注音';
@@ -535,56 +586,80 @@ function repeatGame(){ go(()=>{
     }
     setTimeout(sayCur, 250);
   }
-  function next(){ i++; if(i >= items.length){ if(!queue.length) refill(); items.push(queue.shift()); } show(); }
-  function prev(){ if(i>0){ i--; show(); } }
+  function next(){ stopListen(); i++; if(i >= items.length){ if(!queue.length) refill(); items.push(queue.shift()); } show(); }
+  function prev(){ stopListen(); if(i>0){ i--; show(); } }
   async function success(){
     if(advancing) return; advancing = true;
-    showJudge(false); addStar(); cheer(); status.textContent = '唸得好棒！';
+    addStar(); cheer(); status.textContent = '唸對了！好棒！';
     const it = cur();
     await capped(it.t==='zy' ? say('好棒！', {zy:it.c}) : say('好棒！', it.en), 7000);
     setTimeout(next, 600);
   }
-  function stopRec(){ if(recCtl){ recCtl.stop(); } }
-  listenB.onclick = ()=>{ stopRec(); sayCur(); };
-  prevB.onclick = ()=>{ stopRec(); prev(); };
-  nextB.onclick = ()=>{ stopRec(); next(); };
-  goodB.onclick = success;
-  againB.onclick = ()=>{ showJudge(false); micB.click(); };
-  micB.onclick = async ()=>{
-    if(recStarting) return;                        // 麥克風還在啟動，先不理會連按
-    if(recCtl){ stopRec(); return; }               // 第二次按＝說完了
-    stopTalking(); showJudge(false);
-    if(!canRecord()){
-      status.textContent = '現在請大聲唸出來！唸完按 ⭐';
-      showJudge(true); return;
+  async function fail(heard){
+    fails++; renderTries();
+    if(fails >= MAX_TRY){
+      advancing = true;
+      status.textContent = '這個比較難，我們先換下一個，等一下再來挑戰！';
+      await capped(say('沒關係，我們換下一個'), 5000);
+      // 沒唸對的放回後面，等一下再練一次
+      const it = cur(); queue.splice(Math.min(3, queue.length), 0, it);
+      setTimeout(next, 500);
+      return;
     }
-    recStarting = true; status.textContent = '準備中…';
-    try{
-      recCtl = await startRecording(4000);
-      recStarting = false;
-    }catch(e){
-      recStarting = false;
-      status.textContent = micErrorText(e) + ' 現在先大聲唸出來，唸完按 ⭐';
-      showJudge(true); return;
-    }
-    micB.classList.add('rec'); micB.textContent = '⏹ 說完了';
-    status.textContent = '請說！';
-    const blob = await recCtl.done; recCtl = null;
-    micB.classList.remove('rec'); micB.textContent = '🎤 我來唸';
-    if(!blob){ status.textContent = '沒有錄到聲音，再試一次'; return; }
-    lastBlob = blob;
-    const myItem = i, myTok = ++sayToken;          // 中途換題或按了別的聲音，就不要再接著唸
-    const still = ()=> i===myItem && sayToken===myTok && document.body.contains(micB);
-    status.textContent = '聽聽你唸的 👂';
-    await playBlob(blob);
-    if(!still()) return;
-    status.textContent = '再聽一次老師唸';
-    await sleep(300); if(!still()) return;
-    await sayCur(); if(i!==myItem || !document.body.contains(micB)) return;
-    status.textContent = '一樣嗎？唸得好就按 ⭐';
-    showJudge(true);
+    status.textContent = heard ? `聽起來像「${heard}」，再聽一次，再唸一次` : '沒聽到聲音，大聲一點再唸一次';
+    await sayCur();
+  }
+  function stopListen(){ if(rec){ try{ rec.abort() }catch(e){} rec = null; micB.classList.remove('rec'); micB.textContent='🎤 我來唸'; setAudioSession('playback'); } }
+  listenB.onclick = ()=>{ stopListen(); sayCur(); };
+  prevB.onclick = prev; nextB.onclick = next;
+  micB.onclick = ()=>{
+    if(advancing) return;
+    if(rec){ try{ rec.stop() }catch(e){} return; }      // 第二次按＝唸完了
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const inFrame = (()=>{ try{ return window.top !== window.self }catch(_){ return true } })();
+    if(!SR || inFrame){ status.textContent = inFrame ? '在 Claude 的預覽裡不能評分。請把遊戲網址貼到 Safari 開。' : '這個瀏覽器不能聽你唸。請用 iPad 的 Safari 開遊戲網址。'; return; }
+    stopTalking();
+    setAudioSession('play-and-record');
+    const it = cur();
+    const r = new SR(); rec = r;
+    r.lang = it.t==='zy' ? 'zh-TW' : 'en-US';
+    r.interimResults = true; r.continuous = true; r.maxAlternatives = 5;
+    let finished = false, heard = '';
+    const finish = (ok)=>{
+      if(finished) return; finished = true;
+      clearTimeout(timer);
+      if(rec===r){ try{ r.stop() }catch(e){} rec = null; }
+      micB.classList.remove('rec'); micB.textContent = '🎤 我來唸';
+      setAudioSession('playback');
+      if(it !== cur()) return;                         // 已經換題了
+      ok ? success() : fail(heard);
+    };
+    const timer = setTimeout(()=>finish(false), 6000);
+    r.onresult = e=>{
+      const texts = [];
+      for(let k=e.resultIndex;k<e.results.length;k++) for(let a=0;a<e.results[k].length;a++) texts.push(e.results[k][a].transcript);
+      if(texts[0] && texts[0].trim()) heard = texts[0].trim();
+      if(speechOk(it, texts)) finish(true);
+    };
+    r.onerror = e=>{
+      if(e.error==='aborted') return;
+      if(e.error==='not-allowed' || e.error==='service-not-allowed'){
+        finished = true; clearTimeout(timer); rec = null; micB.classList.remove('rec'); micB.textContent='🎤 我來唸'; setAudioSession('playback');
+        status.textContent = '不能使用語音辨識。請在 iPad「設定 → Safari」允許麥克風，並到「設定 → 一般 → 鍵盤」打開「啟用聽寫」。';
+        return;
+      }
+      if(e.error==='audio-capture'){
+        finished = true; clearTimeout(timer); rec = null; micB.classList.remove('rec'); micB.textContent='🎤 我來唸'; setAudioSession('playback');
+        status.textContent = '找不到麥克風，或麥克風正被別的 App 使用。'; return;
+      }
+      finish(false);   // no-speech、network 等
+    };
+    r.onend = ()=>finish(false);
+    try{ r.start(); }catch(e){ finished = true; rec = null; setAudioSession('playback'); status.textContent = '不能開始聽（' + (e.name||'錯誤') + '），請再按一次。'; return; }
+    micB.classList.add('rec'); micB.textContent = '⏹ 唸完了';
+    status.textContent = '請說！我在聽…';
   };
-  cleanup = ()=>{ stopRec(); };
+  cleanup = stopListen;
   next();
 })}
 
