@@ -505,12 +505,20 @@ function traceGame(){ go(()=>{
   }
   function check(){
     const P = draw.width; const d = dctx.getImageData(0,0,P,P).data;
+    // 字的筆畫比手指描的線粗：字上的一點，只要附近（半個筆刷寬）有描到就算描到
+    const r = Math.round(P*0.05);
+    const hit = (x,y)=> x>=0&&y>=0&&x<P&&y<P && d[(y*P+x)*4+3]>0;
+    const near = (x,y)=> hit(x,y)||hit(x+r,y)||hit(x-r,y)||hit(x,y+r)||hit(x,y-r)||hit(x+r,y+r)||hit(x-r,y-r)||hit(x+r,y-r)||hit(x-r,y+r);
     let inT=0,inC=0,outC=0,drawn=0;
-    for(const [x,y,inside] of pts){ const a=d[(y*P+x)*4+3]>0; if(inside){inT++; if(a)inC++} else if(a) outC++; if(a)drawn++; }
+    for(const [x,y,inside] of pts){
+      if(inside){ inT++; if(near(x,y)) inC++; }
+      if(hit(x,y)){ drawn++; if(!inside) outC++; }
+    }
     const cover = inT? inC/inT : 0; const outside = drawn? outC/drawn : 0;
-    meter.firstChild.style.width = Math.min(100, Math.round(cover/0.72*100))+'%';
+    const NEED = 0.8;
+    meter.firstChild.style.width = Math.min(100, Math.round(cover/NEED*100))+'%';
     const zyNow = isZy(ch());
-    if(!done && cover>(zyNow?0.68:0.72) && outside<(zyNow?0.6:0.45)){
+    if(!done && cover>NEED && outside<0.6){
       done=true; addStar(); cheer();
       if(zyNow) zh('好棒！'+ZY[ch()][0]);
       else say('好棒！', /\d/.test(ch())?EN_NUM[+ch()]:ch());
