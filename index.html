@@ -436,7 +436,7 @@ function home(){ go(()=>{
     b.onclick = fn; g.appendChild(b);
   });
   const n = stickerCount();
-  const bar = el('button','bookbar', `<span class="bk">📒</span><span><b>貼紙本</b><span class="sub">已收集 ${n} / ${STICKERS.length} 張・再 ${PER_STICKER - stars % PER_STICKER} 顆星換下一張</span></span><span class="mini">${STICKERS.slice(0,n).slice(-6).join('')}</span>`);
+  const bar = el('button','bookbar', `<span class="bk">📒</span><span><b>貼紙本</b><span class="sub">已收集 ${n} / ${STICKERS.length} 張${n<STICKERS.length ? `・再 ${PER_STICKER - stars % PER_STICKER} 顆星換下一張` : '・全部收集完了！'}</span></span><span class="mini">${STICKERS.slice(0,n).slice(-6).join('')}</span>`);
   bar.onclick = stickerBook;
   const pl = el('button','parentlink','⚙ 爸媽設定（聲音、錄注音）');
   pl.onclick = settings;
@@ -674,13 +674,14 @@ function traceGame(){ go(()=>{
   prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
   row.append(prevB, demoB, clearB, nextB);
 
-  let S=300, dpr=1, gctx, dctx, strokes=[], cur=0, prog=0, demoing=0, done=false, path=[], drawing=false, started=false;
+  let S=300, dpr=1, gctx, dctx, strokes=[], cur=0, prog=0, demoing=false, demoSeq=0, accepted=[], done=false, path=[], drawing=false, started=false;
   const ch = ()=>ITEMS[idx];
   const isZy = c => !!ZY[c];
   const sayIt = ()=>{ const c=ch(); if(isZy(c)) return zySay(c); if(/\d/.test(c)) return say(EN_NUM[+c]); return say(c+'.', HINT[c]); };
   sayBtn.onclick = sayIt;
   const U = ()=>S*dpr/100;              // 1 單位 = 幾個像素
-  const R_START = 15, R_FOLLOW = 13, LOOK = 26;   // 容許誤差（單位）
+  // 容許誤差（字格 100 單位）：起點、沿線前進、偏離線、終點
+  const R_START = 10, R_FOLLOW = 10, LOOK = 20, R_DEV = 11, R_END = 12, MAX_OFF = 0.1;
 
   function size(){
     const avail = stage.clientHeight - top.offsetHeight - steps.offsetHeight - status.offsetHeight - row.offsetHeight - 90;
@@ -704,61 +705,59 @@ function traceGame(){ go(()=>{
     ctx.strokeStyle=color; ctx.lineWidth=(s.o?20:12)*u; ctx.lineCap='round'; ctx.lineJoin='round';
     ctx.beginPath(); pts.forEach(([x,y],k)=> k? ctx.lineTo(x*u,y*u) : ctx.moveTo(x*u,y*u)); ctx.stroke(); ctx.restore();
   }
-  const INK='#34B977', GUIDE='#DCE8F5', NOW='#FFC23A';
+  const INK='#34B977', GUIDE='#DCE8F5', NOW='#FFC23A', HAND='rgba(255,106,77,.9)';
   function renderGuide(){
     const P = guide.width; gctx.clearRect(0,0,P,P);
     // 田字格的中線
     gctx.save(); gctx.strokeStyle='#EEF3FA'; gctx.lineWidth=2*dpr; gctx.setLineDash([8*dpr,8*dpr]);
     gctx.beginPath(); gctx.moveTo(P/2,0); gctx.lineTo(P/2,P); gctx.moveTo(0,P/2); gctx.lineTo(P,P/2); gctx.stroke(); gctx.restore();
-    strokes.forEach((s,k)=> strokeShape(gctx, s, k<cur ? INK : (k===cur && !demoing ? '#CFE0F2' : GUIDE)));
-    if(!demoing && cur < strokes.length) drawStartMark(strokes[cur], cur+1);
+    strokes.forEach((s,k)=> strokeShape(gctx, s, k===cur && !demoing ? '#CFE0F2' : GUIDE));
     steps.innerHTML = strokes.map((_,k)=>`<i class="${k<cur?'on':k===cur?'cur':''}"></i>`).join('');
   }
-  function drawStartMark(s, n){
+  function drawStartMark(ctx, s, n){
     const u = U(), [x,y] = s.r[0], [x2,y2] = s.r[Math.min(4, s.r.length-1)];
     // 方向箭頭
     const ang = Math.atan2(y2-y, x2-x);
-    gctx.save(); gctx.translate(x*u, y*u); gctx.rotate(ang);
-    gctx.fillStyle = NOW; gctx.beginPath(); gctx.moveTo(14*u,0); gctx.lineTo(8*u,-4*u); gctx.lineTo(8*u,4*u); gctx.closePath(); gctx.fill();
-    gctx.restore();
-    gctx.save(); gctx.fillStyle = INK; gctx.beginPath(); gctx.arc(x*u, y*u, 5.5*u, 0, Math.PI*2); gctx.fill();
-    gctx.fillStyle = '#fff'; gctx.font = `700 ${7*u}px Fredoka, sans-serif`; gctx.textAlign='center'; gctx.textBaseline='middle';
-    gctx.fillText(String(n), x*u, y*u+0.3*u); gctx.restore();
+    ctx.save(); ctx.translate(x*u, y*u); ctx.rotate(ang);
+    ctx.fillStyle = NOW; ctx.beginPath(); ctx.moveTo(14*u,0); ctx.lineTo(8*u,-4*u); ctx.lineTo(8*u,4*u); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.save(); ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(x*u, y*u, 5.5*u, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = `700 ${7*u}px Fredoka, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(n), x*u, y*u+0.3*u); ctx.restore();
   }
   function setup(){
-    done=false; cur=0; prog=0; path=[]; started=false;
+    done=false; cur=0; prog=0; path=[]; started=false; accepted=[];
     const c0 = ch();
     strokes = GLYPHS[c0].map(s=>({...s, r: resample(s.t, 2)}));
     nameEl.innerHTML = isZy(c0) ? `<span class="zyhint">${c0}　${ZY[c0][2]} ${escH(ZY[c0][1])}</span>` : (/\d/.test(c0) ? c0 : `${c0}　<span class="zyhint" style="font-size:.7em">${escH(HINT[c0])}</span>`);
-    dctx.clearRect(0,0,draw.width,draw.height);
-    renderGuide();
+    renderGuide(); redrawInk();
     status.textContent = `從綠色的 1 開始，照箭頭的方向描（共 ${strokes.length} 筆）`;
   }
   async function demo(){
-    const my = ++demoing; dctx.clearRect(0,0,draw.width,draw.height);
-    const keepCur = cur; cur = 0; renderGuide();
+    const my = ++demoSeq; demoing = true; dctx.clearRect(0,0,draw.width,draw.height);
+    const keepCur = cur; cur = 0; dctx.clearRect(0,0,draw.width,draw.height); renderGuide();
     status.textContent = '看清楚筆順喔';
     for(let k=0;k<strokes.length;k++){
       const s = strokes[k], n = s.r.length, dur = Math.min(1100, 250 + n*12), t0 = performance.now();
       await new Promise(res=>{
         const f = now=>{
-          if(my!==demoing) return res();
+          if(my!==demoSeq) return res();
           const p = Math.min(1,(now-t0)/dur);
           partialStroke(dctx, s, Math.round(p*(n-1)), INK);
           p<1 ? requestAnimationFrame(f) : res();
         };
         requestAnimationFrame(f);
       });
-      if(my!==demoing) return;
+      if(my!==demoSeq) return;
       await sleep(200);
     }
     await sleep(500);
-    if(my!==demoing) return;
-    demoing = 0; cur = keepCur; dctx.clearRect(0,0,draw.width,draw.height); renderGuide();
+    if(my!==demoSeq) return;
+    demoing = false; cur = keepCur; redrawInk(); renderGuide();
     status.textContent = `換你了！從綠色的 ${cur+1} 開始描`;
   }
   const pos = e=>{ const r=draw.getBoundingClientRect(); return [(e.clientX-r.left)*100/r.width,(e.clientY-r.top)*100/r.height] };
-  function inkLine(a,b){ const u=U(); dctx.strokeStyle='rgba(255,106,77,.85)'; dctx.lineWidth=7*u; dctx.lineCap='round'; dctx.lineJoin='round'; dctx.beginPath(); dctx.moveTo(a[0]*u,a[1]*u); dctx.lineTo(b[0]*u,b[1]*u); dctx.stroke(); }
+  function inkLine(a,b){ const u=U(); dctx.strokeStyle=HAND; dctx.lineWidth=7*u; dctx.lineCap='round'; dctx.lineJoin='round'; dctx.beginPath(); dctx.moveTo(a[0]*u,a[1]*u); dctx.lineTo(b[0]*u,b[1]*u); dctx.stroke(); }
   function follow(p){
     const r = strokes[cur].r;
     if(!started){ if(Math.hypot(p[0]-r[0][0], p[1]-r[0][1]) <= R_START){ started=true; prog=0; } else return; }
@@ -766,18 +765,49 @@ function traceGame(){ go(()=>{
     const end = Math.min(r.length-1, prog + LOOK);
     for(let j=end;j>prog;j--){ if(Math.hypot(p[0]-r[j][0], p[1]-r[j][1]) <= R_FOLLOW){ prog=j; break; } }
   }
-  function endStroke(){
-    const r = strokes[cur].r;
+  // 把已經寫好的筆畫（小朋友自己的筆跡）重畫出來
+  function redrawInk(){
     dctx.clearRect(0,0,draw.width,draw.height);
-    if(started && prog >= r.length*0.85 - 1){
+    for(const pts of accepted){ inkPath(pts); }
+    // 下一筆的起點和方向畫在筆跡上面，才不會被蓋住
+    if(!demoing && !done && cur < strokes.length) drawStartMark(dctx, strokes[cur], cur+1);
+  }
+  function inkPath(pts){
+    if(!pts.length) return;
+    const u=U(); dctx.strokeStyle=HAND; dctx.lineWidth=7*u; dctx.lineCap='round'; dctx.lineJoin='round';
+    dctx.beginPath(); pts.forEach(([x,y],k)=> k? dctx.lineTo(x*u,y*u) : dctx.moveTo(x*u,y*u));
+    if(pts.length===1) dctx.lineTo(pts[0][0]*u+0.01, pts[0][1]*u);
+    dctx.stroke();
+  }
+  const dist = (a,b)=>Math.hypot(a[0]-b[0], a[1]-b[1]);
+  const lenOf = pts=>{ let L=0; for(let k=1;k<pts.length;k++) L+=dist(pts[k-1],pts[k]); return L; };
+  // 這一筆寫得對不對：起點、方向、有沒有寫到最後、有沒有跑出線外、有沒有亂塗
+  function judgeStroke(pts){
+    const r = strokes[cur].r, last = r[r.length-1];
+    if(!started) return 'start';
+    if(prog < r.length-1-2 || dist(pts[pts.length-1], last) > R_END) return 'short';
+    const off = pts.filter(q=>{ let m=1e9; for(const t of r){ const d=dist(q,t); if(d<m) m=d; if(m<=R_DEV) break; } return m>R_DEV; }).length;
+    if(off/pts.length > MAX_OFF) return 'off';
+    if(lenOf(pts) > lenOf(r)*1.8 + 12) return 'scribble';
+    return 'ok';
+  }
+  function endStroke(){
+    const verdict = judgeStroke(path);
+    if(verdict==='ok'){
+      accepted.push(path.slice());
       cur++; prog=0; started=false;
-      renderGuide();
+      redrawInk(); renderGuide();
       if(cur >= strokes.length) return finish();
-      status.textContent = `很好！接著描第 ${cur+1} 筆`;
+      status.textContent = `很好！接著寫第 ${cur+1} 筆`;
     } else {
       started=false; prog=0;
-      status.textContent = started ? '要描完整一筆喔，再試一次' : `從綠色的 ${cur+1} 開始，照箭頭方向描`;
-      renderGuide();
+      redrawInk(); renderGuide();      // 擦掉這次沒寫好的那一筆
+      status.textContent = {
+        start: `從綠色的 ${cur+1} 開始，照箭頭方向寫`,
+        short: '要寫到這一筆的最後喔，再試一次',
+        off: '跑出線外了，沿著灰色的線寫',
+        scribble: '不要來回塗喔，一筆寫過去'
+      }[verdict];
     }
   }
   async function finish(){
@@ -799,13 +829,14 @@ function traceGame(){ go(()=>{
   const up = ()=>{ if(drawing){ drawing=false; endStroke(); } };
   draw.addEventListener('pointerup', up); draw.addEventListener('pointercancel', up);
   async function startItem(){ await sayIt(); if(!done && cur===0) demo(); }
-  clearB.onclick = ()=>{ demoing=0; setup(); };
+  const stopDemo = ()=>{ demoSeq++; demoing=false; };
+  clearB.onclick = ()=>{ stopDemo(); setup(); };
   demoB.onclick = ()=>{ demo(); };
-  prevB.onclick = ()=>{ demoing=0; idx=(idx-1+ITEMS.length)%ITEMS.length; setup(); startItem(); };
-  nextB.onclick = ()=>{ demoing=0; idx=(idx+1)%ITEMS.length; setup(); startItem(); };
-  const onResize = ()=>{ const keep=cur; size(); renderGuide(); cur=keep; };
+  prevB.onclick = ()=>{ stopDemo(); idx=(idx-1+ITEMS.length)%ITEMS.length; setup(); startItem(); };
+  nextB.onclick = ()=>{ stopDemo(); idx=(idx+1)%ITEMS.length; setup(); startItem(); };
+  const onResize = ()=>{ size(); renderGuide(); redrawInk(); };
   window.addEventListener('resize', onResize);
-  cleanup = ()=>{ demoing=0; window.removeEventListener('resize', onResize); };
+  cleanup = ()=>{ stopDemo(); window.removeEventListener('resize', onResize); };
   requestAnimationFrame(()=>{ size(); setup(); setTimeout(startItem, 300); });
 })}
 
