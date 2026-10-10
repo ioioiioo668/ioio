@@ -181,6 +181,9 @@ function speak(text, lang='en-US', rate=0.8){
     }catch(e){ res() }
   });
 }
+/* 換下一題不能卡在語音上：最多等 ms 毫秒（有些 iPad 的語音不會回報「唸完了」） */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const capped = (p, ms=3000) => Promise.race([p, sleep(ms)]);
 const zh = (t, r=0.9) => { sayToken++; return speak(t,'zh-TW',r); };
 /* 中英混唸：say('找出','bird') → 「找出」用中文、「bird」用英文，依序唸。新的一句會打斷舊的 */
 let sayToken = 0;
@@ -325,12 +328,12 @@ function listenGame(){ go(()=>{
     let opts, target, sayTarget, sayOpt, label;
     if(zyRound){
       opts = shuffle(ZY_LIST).slice(0,3); target = pick(opts);
-      sayTarget = ()=>zh('哪一個是 '+ZY[target][0]+'？',0.8);
+      sayTarget = ()=>{ const k=ZY[target][0]; return zh(`${k}，${k}，${k}`,0.7); };
       sayOpt = o => zh('這是 '+ZY[o][0],0.8);
       label = '哪一個注音？';
     } else {
       opts = shuffle(WORDS).slice(0,3); target = pick(opts);
-      sayTarget = ()=>say('找出', target.en);
+      sayTarget = ()=>say('找出', target.en, target.en, target.en);
       sayOpt = o => say('這是', o.en);
       label = `找出 <span class="en">${target.en}</span>`;
     }
@@ -345,7 +348,7 @@ function listenGame(){ go(()=>{
         if(locked) return;
         if(o===target){
           locked=true; c.classList.add('ok'); addStar(); cheer();
-          if(zyRound) await zySay(o); else await say('對了！', o.en);
+          await capped(zyRound ? zySay(o) : say('對了！', o.en));
           setTimeout(round,500);
         } else { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); await sayOpt(o); sayTarget(); }
       };
@@ -382,10 +385,13 @@ function repeatGame(){ go(()=>{
     }
     setTimeout(sayCur,250);
   }
+  let advancing = false;
   async function success(){
+    if(advancing) return; advancing = true;
     addStar(); cheer(); extra.innerHTML=''; setStatus('唸得好棒！');
     const it = cur();
-    if(it.t==='zy') await zh('好棒！'+ZY[it.c][0]); else await say('好棒！', it.en);
+    await capped(it.t==='zy' ? zh('好棒！'+ZY[it.c][0]) : say('好棒！', it.en));
+    setTimeout(()=>{ advancing = false; i=(i+1)%ITEMS.length; show(); }, 600);
   }
   function parentPanel(reason){
     extra.innerHTML='';
@@ -613,7 +619,7 @@ function mathGame(){ go(()=>{
         if(v===n){
           locked=true; b.classList.add('ok');
           const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = n;
-          addStar(); cheer('答對了！'); await say('答對了！', EN_NUM[n]); setTimeout(round,500);
+          addStar(); cheer('答對了！'); await capped(say('答對了！', EN_NUM[n])); setTimeout(round,500);
         }
         else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); zh(mode%2?'再數數看':'再算算看'); }
       };
