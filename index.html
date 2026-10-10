@@ -321,8 +321,20 @@ function micErrorText(e){
 const canRecord = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
 // 開始錄音；回傳 {stop(), done: Promise<Blob|null>}
 async function startRecording(maxMs){
-  const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
-  try{ if(navigator.audioSession) navigator.audioSession.type = 'play-and-record'; }catch(e){}
+  // iPad：聲音模式是「只播放」時不准錄音（InvalidStateError），所以要先切到「可播放也可錄音」
+  const setSession = t => { try{ if(navigator.audioSession) navigator.audioSession.type = t; }catch(e){} };
+  try{ player.pause(); }catch(e){}
+  setSession('play-and-record');
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+  }catch(e){
+    if(e && e.name==='InvalidStateError'){           // 再試一次：交給系統自動決定
+      setSession('auto'); await sleep(150);
+      try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+      catch(e2){ setSession('playback'); throw e2; }
+    } else { setSession('playback'); throw e; }
+  }
   const mime = ['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(m=>{ try{ return MediaRecorder.isTypeSupported(m) }catch(e){ return false } });
   const mr = new MediaRecorder(stream, mime ? {mimeType:mime} : undefined);
   const chunks = [];
@@ -334,7 +346,7 @@ async function startRecording(maxMs){
       res(chunks.length ? new Blob(chunks, {type: mr.mimeType || mime || 'audio/mp4'}) : null);
     };
   });
-  mr.start();
+  try{ mr.start(); }catch(e){ stream.getTracks().forEach(t=>t.stop()); setSession('playback'); throw e; }
   const timer = setTimeout(()=>{ try{ mr.state!=='inactive' && mr.stop() }catch(e){} }, maxMs);
   const t0 = Date.now();
   // 剛開始錄的 0.6 秒內不理會「停止」（避免連按錄到空白）
