@@ -14,10 +14,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
 <style>
-/* Layout: one-screen app — top bar (home · title · stars), stage below; home is a 2×2 grid of big crayon-colored tiles. Deliberate single bright theme for kids. */
+/* Layout: one-screen app — top bar (home · title · stars→sticker book), stage below; home is a 2×2 grid of crayon tiles plus a sticker-book bar. Deliberate single bright theme for kids. */
 :root{
   --ground:#E6F4FF; --card:#FFFFFF; --ink:#1E2B4A; --soft:#5B6B8C; --line:#C7DCF2;
-  --tomato:#FF6A4D; --sun:#FFC23A; --leaf:#34B977; --berry:#7B5CFF; --guide:#D9E8F7;
+  --tomato:#FF6A4D; --sun:#FFC23A; --leaf:#34B977; --berry:#7B5CFF; --guide:#DCE8F5; --cream:#FFF5D6;
   --display:"Fredoka","PingFang TC","Heiti TC","Noto Sans TC",system-ui,sans-serif;
   --body:"PingFang TC","Heiti TC","Noto Sans TC","Fredoka",system-ui,sans-serif;
   color-scheme:light;
@@ -29,137 +29,219 @@ header{display:flex;align-items:center;gap:12px;padding:12px 16px}
 header h1{flex:1;margin:0;font-family:var(--display);font-size:clamp(20px,5vw,30px);font-weight:700;text-wrap:balance}
 .iconbtn{border:0;background:var(--card);color:var(--ink);width:52px;height:52px;border-radius:16px;font-size:26px;display:grid;place-items:center;box-shadow:0 3px 0 var(--line);cursor:pointer}
 .iconbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
-.stars{font-family:var(--display);font-weight:700;font-size:22px;background:var(--card);padding:10px 16px;border-radius:999px;box-shadow:0 3px 0 var(--line);font-variant-numeric:tabular-nums}
+.stars{border:0;color:var(--ink);font-family:var(--display);font-weight:700;font-size:22px;background:var(--card);padding:10px 16px;border-radius:999px;box-shadow:0 3px 0 var(--line);font-variant-numeric:tabular-nums;cursor:pointer}
+.stars.bump{animation:bump .5s}
+@keyframes bump{40%{transform:scale(1.25)}}
 #stage{flex:1;min-height:0;overflow:auto;padding-inline:16px;padding-block:4px 16px;display:flex;flex-direction:column}
 button{font-family:var(--body)}
-button:focus-visible{outline:4px solid var(--berry);outline-offset:3px}
+button:focus-visible,select:focus-visible{outline:4px solid var(--berry);outline-offset:3px}
 
 /* home */
-.home{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;max-width:760px;width:100%;margin:0 auto;align-content:center}
+.homewrap{max-width:760px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px;flex:1;justify-content:center}
+.home{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .tile{border:0;border-radius:28px;color:#fff;padding:20px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:150px;cursor:pointer;box-shadow:0 6px 0 rgba(30,43,74,.18)}
 .tile:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(30,43,74,.18)}
 .tile svg{width:clamp(56px,14vw,96px);height:auto}
 .tile b{font-size:clamp(22px,5.5vw,34px);font-weight:800}
 .tile small{font-family:var(--display);font-size:clamp(14px,3.4vw,18px);font-weight:600;opacity:.9;letter-spacing:.04em}
 .t1{background:var(--tomato)} .t2{background:var(--berry)} .t3{background:var(--leaf)} .t4{background:#F0A400}
-.soundtest{max-width:760px;width:100%;margin:16px auto 0;display:flex;flex-direction:column;align-items:center;gap:8px}
-.soundtest .btn{font-size:18px;padding:12px 18px}
-.voicepick{display:flex;flex-direction:column;gap:8px;width:100%;max-width:460px}
-.vrow{display:flex;align-items:center;gap:10px;font-size:16px}
-.vrow span{flex:none;width:5em}
-.vrow select{flex:1;min-width:0;font-size:16px;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
-.tlog{font-size:15px;color:var(--ink);text-align:center;line-height:1.6;user-select:text;-webkit-user-select:text}
-.note{max-width:760px;margin:12px auto 0;color:var(--soft);font-size:13px;line-height:1.6;text-align:center}
+.bookbar{border:0;border-radius:24px;background:var(--card);box-shadow:0 5px 0 var(--line);padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;color:var(--ink);text-align:left}
+.bookbar .bk{font-size:44px}
+.bookbar b{font-size:22px;display:block}
+.bookbar .sub{font-size:15px;color:var(--soft)}
+.bookbar .mini{margin-left:auto;font-size:28px;letter-spacing:2px;white-space:nowrap;overflow:hidden;max-width:40%}
+.parentlink{align-self:center;border:0;background:none;color:var(--soft);font-size:15px;padding:8px 12px;cursor:pointer;text-decoration:underline}
 
 /* shared game bits */
 .wrap{max-width:820px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px;flex:1}
+.chip{align-self:center;background:var(--card);border-radius:999px;padding:6px 16px;font-size:18px;font-weight:700;box-shadow:0 3px 0 var(--line)}
 .prompt{display:flex;align-items:center;justify-content:center;gap:12px;font-size:clamp(22px,5.5vw,34px);font-weight:800;text-align:center}
 .prompt .en{font-family:var(--display);color:var(--berry)}
 .say{border:0;background:var(--sun);color:var(--ink);width:60px;height:60px;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 0 #D99A10;flex:none}
 .say:active{transform:translateY(3px);box-shadow:0 1px 0 #D99A10}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;flex:1;align-content:center}
-.pic{border:0;background:var(--card);border-radius:24px;aspect-ratio:1;max-width:100%;font-size:clamp(52px,15vw,130px);cursor:pointer;box-shadow:0 5px 0 var(--line);display:grid;place-items:center}
+.pic{border:0;background:var(--card);border-radius:24px;aspect-ratio:1;max-width:100%;font-size:clamp(52px,15vw,130px);cursor:pointer;box-shadow:0 5px 0 var(--line);display:grid;place-items:center;color:var(--ink)}
+.pic.zycard{font-family:var(--body);font-weight:700}
 .pic.ok{background:#DDF7E9;box-shadow:0 5px 0 var(--leaf)}
 .pic.no{animation:shake .4s}
 @keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
 .big{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--card);border-radius:28px;box-shadow:0 5px 0 var(--line);padding:20px}
 .big .emo{font-size:clamp(90px,26vw,190px);line-height:1.1}
 .big .word{font-family:var(--display);font-weight:700;font-size:clamp(48px,13vw,96px);letter-spacing:.04em}
+.big .zybig{font-family:var(--body);font-weight:700;font-size:clamp(110px,30vw,220px);line-height:1.1}
 .big .zh{font-size:22px;color:var(--soft)}
 .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn{border:0;border-radius:20px;padding:16px 22px;font-size:22px;font-weight:800;cursor:pointer;color:#fff;background:var(--berry);box-shadow:0 4px 0 #5A3FD6;min-width:120px}
+.btn{border:0;border-radius:20px;padding:16px 22px;font-size:22px;font-weight:800;cursor:pointer;color:#fff;background:var(--berry);box-shadow:0 4px 0 #5A3FD6;min-width:110px}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #5A3FD6}
 .btn.green{background:var(--leaf);box-shadow:0 4px 0 #24905B}
 .btn.red{background:var(--tomato);box-shadow:0 4px 0 #D24A31}
 .btn.plain{background:var(--card);color:var(--ink);box-shadow:0 4px 0 var(--line)}
-.btn.listening{animation:pulse 1s infinite}
+.btn.small{font-size:17px;padding:10px 14px;min-width:0;border-radius:14px}
+.btn.rec{animation:pulse 1s infinite}
+.btn[disabled]{opacity:.45;pointer-events:none}
 @keyframes pulse{50%{transform:scale(1.06)}}
-.status{min-height:28px;text-align:center;font-size:18px;color:var(--soft)}
-.parent{background:#FFF5D6;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
-.parent p{margin:0;font-size:17px}
+.status{min-height:28px;text-align:center;font-size:20px;color:var(--soft)}
 
 /* trace */
 .trace-box{position:relative;align-self:center;background:var(--card);border-radius:28px;box-shadow:0 5px 0 var(--line);touch-action:none}
 .trace-box canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:28px}
-.tabs{display:flex;gap:10px;justify-content:center}
-.tab{border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:10px 20px;font-family:var(--display);font-weight:700;font-size:20px;box-shadow:0 3px 0 var(--line);cursor:pointer}
-.tab.on{background:var(--leaf);color:#fff;box-shadow:0 3px 0 #24905B}
 .zyhint{font-family:var(--body);color:var(--ink)}
-.meter{height:14px;background:var(--card);border-radius:99px;overflow:hidden;box-shadow:inset 0 0 0 2px var(--line);max-width:420px;width:100%;align-self:center}
-.meter i{display:block;height:100%;width:0;background:var(--leaf);border-radius:99px;transition:width .2s}
+.steps{display:flex;gap:6px;justify-content:center}
+.steps i{width:14px;height:14px;border-radius:50%;background:var(--line)}
+.steps i.on{background:var(--leaf)}
+.steps i.cur{background:var(--sun)}
 
 /* math */
 .objs{background:var(--card);border-radius:28px;box-shadow:0 5px 0 var(--line);padding:18px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;min-height:150px;flex:1}
 .objs span{font-size:clamp(38px,9vw,64px);line-height:1.15}
-.objs .op{font-family:var(--display);font-weight:700;font-size:clamp(44px,10vw,72px);color:var(--berry);padding-inline:8px}
-.group{display:flex;flex-wrap:wrap;justify-content:center;max-width:46%}
+.eq{font-family:var(--display);font-weight:700;font-size:clamp(72px,20vw,150px);display:flex;align-items:center;justify-content:center;gap:.25em;font-variant-numeric:tabular-nums;line-height:1}
+.eq i{font-style:normal;color:var(--berry)}
+.eq b{color:var(--tomato)}
 .answers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .num{border:0;background:var(--card);border-radius:24px;padding:14px 0;font-family:var(--display);font-weight:700;font-size:clamp(44px,11vw,72px);color:var(--ink);box-shadow:0 5px 0 var(--line);cursor:pointer}
 .num.ok{background:#DDF7E9;box-shadow:0 5px 0 var(--leaf)}
 .num.no{animation:shake .4s}
 
+/* sticker book */
+.bookhead{text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.bookhead b{font-size:24px}
+.meter{height:16px;background:var(--card);border-radius:99px;overflow:hidden;box-shadow:inset 0 0 0 2px var(--line);max-width:420px;width:100%}
+.meter i{display:block;height:100%;width:0;background:var(--sun);border-radius:99px}
+.book{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:12px}
+.stk{aspect-ratio:1;max-width:100%;background:var(--card);border-radius:20px;display:grid;place-items:center;font-size:clamp(40px,10vw,60px);box-shadow:0 4px 0 var(--line)}
+.stk.lock{background:#EEF4FB;color:var(--line);font-family:var(--display);font-size:34px;font-weight:700;box-shadow:none;border:3px dashed var(--line)}
+#pop{position:fixed;inset:0;background:rgba(30,43,74,.45);display:grid;place-items:center;z-index:20;padding:16px}
+#pop .card{background:var(--card);border-radius:32px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;max-width:360px;width:100%}
+#pop .sticker{font-size:130px;line-height:1;animation:spin .9s ease-out}
+#pop b{font-size:28px}
+@keyframes spin{0%{transform:scale(.2) rotate(-40deg)}70%{transform:scale(1.15) rotate(8deg)}100%{transform:scale(1)}}
+
+/* parent settings */
+.set{max-width:760px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.sec{background:var(--card);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 0 var(--line)}
+.sec h2{margin:0;font-size:20px}
+.sec p{margin:0;font-size:15px;color:var(--soft);line-height:1.6}
+.vrow{display:flex;align-items:center;gap:10px;font-size:16px;flex-wrap:wrap}
+.vrow > span{flex:none;width:5em}
+.vrow select{flex:1;min-width:0;font-size:16px;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.opt{display:flex;align-items:center;gap:10px;font-size:17px;padding:6px 0}
+.opt input{width:22px;height:22px}
+.tlog{font-size:15px;line-height:1.6;user-select:text;-webkit-user-select:text}
+.recgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.rc{border:2px solid var(--line);border-radius:16px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+.rc.has{border-color:var(--leaf);background:#F0FBF5}
+.rc .sym{font-size:34px;font-weight:700;width:1.2em;text-align:center}
+.rc button{border:0;border-radius:12px;width:40px;height:40px;font-size:18px;background:var(--ground);color:var(--ink);cursor:pointer}
+.rc button.on{background:var(--tomato);color:#fff;animation:pulse 1s infinite}
+.rc button[disabled]{opacity:.3}
+.credit{font-size:13px;color:var(--soft);text-align:center;line-height:1.6}
+.credit a{color:var(--soft)}
+
 /* cheer */
 #cheer{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:9}
 #cheer b{font-size:clamp(70px,20vw,150px);font-weight:900;color:var(--sun);-webkit-text-stroke:4px var(--ink);paint-order:stroke;opacity:0;transform:scale(.4)}
-.zycard{font-family:var(--body);font-weight:700;color:var(--ink)}
-.zybig{font-family:var(--body);font-weight:700;font-size:clamp(110px,30vw,220px);line-height:1.1}
-.eq{font-family:var(--display);font-weight:700;font-size:clamp(72px,20vw,150px);display:flex;align-items:center;justify-content:center;gap:.25em;font-variant-numeric:tabular-nums;line-height:1}
-.eq i{font-style:normal;color:var(--berry)}
-.eq b{color:var(--tomato)}
 #cheer b.go{animation:pop 1s ease-out}
 @keyframes pop{20%{opacity:1;transform:scale(1.1)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
-@media (max-width:420px){.btn{font-size:19px;padding:14px 16px;min-width:0}.cards{gap:10px}}
+@media (max-width:420px){.btn{font-size:19px;padding:14px 16px;min-width:0}.cards{gap:10px}.bookbar .mini{display:none}}
 </style>
 
 <div id="app">
   <header>
     <button class="iconbtn" id="homeBtn" aria-label="回首頁">⌂</button>
     <h1 id="title">小星星樂園</h1>
-    <div class="stars" aria-label="星星數">⭐ <span id="starN">0</span></div>
+    <button class="stars" id="starBtn" aria-label="星星與貼紙本">⭐ <span id="starN">0</span></button>
   </header>
   <main id="stage"></main>
 </div>
 <div id="cheer"><b id="cheerTxt">棒！</b></div>
+<div id="pop" hidden></div>
 
 <script>
+/* ============ 小工具 ============ */
 const $ = s => document.querySelector(s);
 const stage = $('#stage');
-const WORDS = [
-  {en:'apple',zh:'蘋果',e:'🍎'},{en:'cat',zh:'貓咪',e:'🐱'},{en:'dog',zh:'狗狗',e:'🐶'},
-  {en:'fish',zh:'魚',e:'🐟'},{en:'sun',zh:'太陽',e:'☀️'},{en:'car',zh:'汽車',e:'🚗'},
-  {en:'ball',zh:'球',e:'⚽'},{en:'egg',zh:'蛋',e:'🥚'},{en:'bird',zh:'小鳥',e:'🐦'},
-  {en:'banana',zh:'香蕉',e:'🍌'},{en:'star',zh:'星星',e:'⭐'},{en:'cake',zh:'蛋糕',e:'🎂'},
-  {en:'duck',zh:'鴨子',e:'🦆'},{en:'tree',zh:'樹',e:'🌳'},{en:'milk',zh:'牛奶',e:'🥛'}
-];
-const EN_NUM = ['zero','one','two','three','four','five','six','seven','eight','nine','ten'];
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
 const el = (tag, cls, html) => { const n=document.createElement(tag); if(cls) n.className=cls; if(html!=null) n.innerHTML=html; return n; };
+const escH = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const capped = (p, ms=3000) => Promise.race([p, sleep(ms)]);   // 換題不能卡在語音上
+const lsGet = (k, d) => { try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lsSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 
-/* stars */
-let stars = 0;
-try { stars = parseInt(localStorage.getItem('stars')||'0',10)||0 } catch(e){}
-$('#starN').textContent = stars;
-function addStar(){ stars++; $('#starN').textContent = stars; try{localStorage.setItem('stars',stars)}catch(e){} }
-const escH = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const zy = t => escH(t);
-function cheer(t){ const b=$('#cheerTxt'); b.innerHTML=zy(t||pick(['棒！','好厲害！','Yes!','讚！'])); b.classList.remove('go'); void b.offsetWidth; b.classList.add('go'); }
+/* ============ 資料 ============ */
+const THEMES = [
+  {name:'動物', icon:'🐾', words:[['cat','貓咪','🐱'],['dog','狗狗','🐶'],['fish','魚','🐟'],['bird','小鳥','🐦'],['duck','鴨子','🦆'],['pig','豬','🐷'],['cow','牛','🐮'],['horse','馬','🐴'],['lion','獅子','🦁'],['tiger','老虎','🐯'],['monkey','猴子','🐵'],['rabbit','兔子','🐰'],['frog','青蛙','🐸'],['bear','熊','🐻'],['elephant','大象','🐘']]},
+  {name:'水果', icon:'🍎', words:[['apple','蘋果','🍎'],['banana','香蕉','🍌'],['grapes','葡萄','🍇'],['orange','橘子','🍊'],['lemon','檸檬','🍋'],['peach','桃子','🍑'],['cherry','櫻桃','🍒'],['strawberry','草莓','🍓'],['watermelon','西瓜','🍉'],['pear','梨子','🍐']]},
+  {name:'食物', icon:'🍰', words:[['egg','蛋','🥚'],['cake','蛋糕','🎂'],['milk','牛奶','🥛'],['bread','麵包','🍞'],['rice','飯','🍚'],['cookie','餅乾','🍪'],['pizza','披薩','🍕'],['ice cream','冰淇淋','🍦'],['candy','糖果','🍬'],['juice','果汁','🧃']]},
+  {name:'交通', icon:'🚗', words:[['car','汽車','🚗'],['bus','公車','🚌'],['bike','腳踏車','🚲'],['train','火車','🚆'],['boat','船','⛵'],['plane','飛機','✈️'],['truck','卡車','🚚'],['taxi','計程車','🚕']]},
+  {name:'顏色', icon:'🎨', words:[['red','紅色','🔴'],['blue','藍色','🔵'],['green','綠色','🟢'],['yellow','黃色','🟡'],['purple','紫色','🟣'],['black','黑色','⚫'],['white','白色','⚪'],['brown','咖啡色','🟤']]},
+  {name:'身體', icon:'🙂', words:[['eye','眼睛','👁️'],['ear','耳朵','👂'],['nose','鼻子','👃'],['mouth','嘴巴','👄'],['hand','手','✋'],['foot','腳','🦶']]},
+  {name:'大自然', icon:'🌳', words:[['sun','太陽','☀️'],['moon','月亮','🌙'],['star','星星','⭐'],['tree','樹','🌳'],['flower','花','🌸'],['rain','下雨','🌧️']]}
+].map(t=>({...t, words:t.words.map(([en,zh,e])=>({en,zh,e,theme:t.name}))}));
+const EN_NUM = ['zero','one','two','three','four','five','six','seven','eight','nine','ten'];
+const HINT = {A:'apple',B:'ball',C:'cat',D:'dog',E:'egg',F:'fish',G:'grapes',H:'horse',I:'ice cream',J:'juice',K:'kite',L:'lion',M:'milk',N:'nose',O:'orange',P:'pig',Q:'queen',R:'rabbit',S:'sun',T:'tree',U:'umbrella',V:'van',W:'water',X:'fox',Y:'yellow',Z:'zoo'};
+// 注音：同音字（讓語音唸對）、例詞、圖
+const ZY = {
+  'ㄅ':['玻','爸爸','👨'],'ㄆ':['坡','葡萄','🍇'],'ㄇ':['摸','媽媽','👩'],'ㄈ':['佛','飛機','✈️'],
+  'ㄉ':['得','弟弟','👦'],'ㄊ':['特','兔子','🐰'],'ㄋ':['呢','牛奶','🥛'],'ㄌ':['勒','老虎','🐯'],
+  'ㄍ':['哥','哥哥','👦'],'ㄎ':['科','蝌蚪','🐸'],'ㄏ':['喝','花','🌸'],
+  'ㄐ':['機','雞','🐔'],'ㄑ':['欺','氣球','🎈'],'ㄒ':['希','西瓜','🍉'],
+  'ㄓ':['知','蜘蛛','🕷️'],'ㄔ':['吃','車子','🚗'],'ㄕ':['詩','獅子','🦁'],'ㄖ':['日','日出','🌅'],
+  'ㄗ':['資','字','✏️'],'ㄘ':['疵','刺蝟','🦔'],'ㄙ':['思','三','3️⃣'],
+  'ㄧ':['衣','衣服','👕'],'ㄨ':['烏','烏龜','🐢'],'ㄩ':['迂','魚','🐟'],
+  'ㄚ':['啊','嘴巴','👄'],'ㄛ':['喔','公雞喔喔','🐓'],'ㄜ':['鵝','白鵝','🦢'],'ㄝ':['耶','耶誕節','🎄'],
+  'ㄞ':['哀','愛心','❤️'],'ㄟ':['欸','杯子','🥤'],'ㄠ':['凹','貓','🐱'],'ㄡ':['歐','狗','🐶'],
+  'ㄢ':['安','飯','🍚'],'ㄣ':['恩','門','🚪'],'ㄤ':['昂','糖','🍬'],'ㄥ':['鞥','風','🌬️'],'ㄦ':['兒','耳朵','👂']
+};
+const ZY_LIST = Object.keys(ZY);
+const STICKERS = ['🐶','🐱','🐰','🐻','🐼','🦊','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐤','🦉','🐴','🦄','🐝','🐞','🦋','🐢','🐙','🦀','🐬','🐳','🦒','🐘','🦔','🦖','🐿️','🦩','🦜','🐠','🦭'];
+const PER_STICKER = 5;
 
-/* speech out */
-let voices=[];
-function loadVoices(){ try{ voices = speechSynthesis.getVoices() }catch(e){} }
-if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-/* iOS 只允許「手指點擊當下」發出第一句語音：第一次觸碰時先唸一句靜音的，解鎖語音 */
-// Safari 16.4+：把網頁聲音當成媒體播放，避免被 iPhone/iPad 的靜音模式關掉
-try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
-let speechUnlocked = false;
-function unlockSpeech(){
-  if(speechUnlocked || !('speechSynthesis' in window)) return;
-  speechUnlocked = true;
-  try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch(e){}
+/* ============ 星星與貼紙 ============ */
+let stars = lsGet('stars', 0) | 0;
+const stickerCount = () => Math.min(STICKERS.length, Math.floor(stars / PER_STICKER));
+function renderStars(){ $('#starN').textContent = stars; }
+renderStars();
+function addStar(){
+  const before = stickerCount();
+  stars++; lsSet('stars', stars); renderStars();
+  const b = $('#starBtn'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
+  if(stickerCount() > before) setTimeout(()=>showSticker(STICKERS[stickerCount()-1]), 1100);
 }
-['touchend','pointerdown','click'].forEach(t=>document.addEventListener(t, unlockSpeech, {capture:true, passive:true}));
+function showSticker(s){
+  const pop = $('#pop');
+  pop.innerHTML = '';
+  const card = el('div','card', `<div class="sticker">${s}</div><b>得到新貼紙！</b><div class="sub">放進貼紙本了</div>`);
+  const ok = el('button','btn green','好棒！');
+  ok.onclick = ()=>{ pop.hidden = true; };
+  card.appendChild(ok); pop.appendChild(card); pop.hidden = false;
+  zh('你得到一張新貼紙！');
+}
+function cheer(t){ const b=$('#cheerTxt'); b.textContent=t||pick(['棒！','好厲害！','Yes!','讚！']); b.classList.remove('go'); void b.offsetWidth; b.classList.add('go'); }
+
+/* ============ 聲音：語音合成 ============ */
+try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
+let voices = [];
+function loadVoices(){ try{ voices = speechSynthesis.getVoices() }catch(e){} }
+if('speechSynthesis' in window){ loadVoices(); try{ speechSynthesis.addEventListener('voiceschanged', loadVoices) }catch(e){} }
+let voicePref = Object.assign({zh:'', en:''}, lsGet('voicePref', {}));
+function pickVoice(lang){
+  const k = lang.startsWith('zh') ? 'zh' : 'en';
+  return voicePref[k] ? (voices.find(v=>v.name===voicePref[k]) || null) : null;
+}
+// iOS：第一次觸碰時解鎖語音和音效
+const player = new Audio(); player.preload = 'auto';
+let unlocked = false;
+function unlockAudio(){
+  if(unlocked) return; unlocked = true;
+  try{ if('speechSynthesis' in window){ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } }catch(e){}
+  try{ player.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; const p = player.play(); if(p) p.catch(()=>{}); }catch(e){}
+}
+['touchend','pointerdown','click'].forEach(t=>document.addEventListener(t, unlockAudio, {capture:true, passive:true}));
+
+const EN_RATE = 0.5;          // 英文唸慢一點
 function speak(text, lang='en-US', rate=0.8){
   return new Promise(res=>{
     if(!('speechSynthesis' in window)) return res();
@@ -170,104 +252,105 @@ function speak(text, lang='en-US', rate=0.8){
       try{ ss.resume() }catch(e){}
       if(!voices.length) loadVoices();
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang; u.rate = rate; u.pitch = 1.1;
-      // 不指定 voice：iOS 會列出尚未下載的語音，選到就完全沒聲音。只設 lang，讓系統用已安裝的預設語音
-      u.volume = 1;
+      u.lang = lang; u.rate = rate; u.pitch = 1.1; u.volume = 1;
       const pv = pickVoice(lang); if(pv){ u.voice = pv; u.lang = pv.lang; }
       let done=false; const fin=()=>{ if(!done){done=true;res()} };
-      u.onend=fin; u.onerror=fin; setTimeout(fin, 6000);
-      // iOS Safari 在 cancel() 後立刻 speak() 有時會被吞掉，稍等一下再唸
+      u.onend=fin; u.onerror=fin; setTimeout(fin, 2500 + text.length*350);
       if(busy) setTimeout(()=>ss.speak(u), 120); else ss.speak(u);
     }catch(e){ res() }
   });
 }
-/* 換下一題不能卡在語音上：最多等 ms 毫秒（有些 iPad 的語音不會回報「唸完了」） */
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
-const capped = (p, ms=3000) => Promise.race([p, sleep(ms)]);
-const zh = (t, r=0.9) => { sayToken++; return speak(t,'zh-TW',r); };
-/* 中英混唸：say('找出','bird') → 「找出」用中文、「bird」用英文，依序唸。新的一句會打斷舊的 */
 let sayToken = 0;
-const EN_RATE = 0.5;   // 英文唸慢一點，給五歲小朋友聽
+function stopTalking(){ sayToken++; try{ player.pause() }catch(e){} }
 const isEn = t => /^[A-Za-z0-9 .,!?'-]+$/.test(t);
+// say('找出','bird') → 中文的部分用中文唸、英文的部分用英文唸；新的一句會打斷舊的
+// 也可以放 {zy:'ㄅ'}（唸注音）或 {blob}（播放錄音）
 async function say(...parts){
   const my = ++sayToken;
   for(const p of parts){
     if(my !== sayToken) return;
-    if(isEn(p)) await speak(p,'en-US',EN_RATE); else await speak(p,'zh-TW',0.9);
+    if(p && p.blob) await playBlob(p.blob);
+    else if(p && p.zy) await zyKey(p.zy);
+    else if(isEn(p)) await speak(p,'en-US',EN_RATE);
+    else await speak(p,'zh-TW',0.9);
   }
 }
+const zh = t => say(t);
 
-/* 爸爸媽媽可選聲音（只列出裝置上已有的語音）；沒選就用系統預設 */
-let voicePref = {zh:'', en:''};
-try{ voicePref = Object.assign(voicePref, JSON.parse(localStorage.getItem('voicePref')||'{}')); }catch(e){}
-function pickVoice(lang){
-  const k = lang.startsWith('zh') ? 'zh' : 'en';
-  return voicePref[k] ? (voices.find(v=>v.name===voicePref[k]) || null) : null;
-}
-function voicePicker(){
-  const box = el('div','voicepick');
-  const make = (k, label, test, sample) => {
-    const wrap = el('label','vrow'); wrap.htmlFor = 'voice-'+k;
-    wrap.appendChild(el('span','', label));
-    const sel = document.createElement('select'); sel.id = 'voice-'+k;
-    const fill = ()=>{
-      const list = voices.filter(v=>test.test(v.lang));
-      sel.innerHTML = '';
-      sel.appendChild(new Option('系統預設', ''));
-      list.sort((a,b)=>(/(enhanced|premium|加強|高品質)/i.test(b.name)?1:0)-(/(enhanced|premium|加強|高品質)/i.test(a.name)?1:0) || a.name.localeCompare(b.name))
-          .forEach(v=>sel.appendChild(new Option(`${v.name}（${v.lang}）`, v.name)));
-      sel.value = voicePref[k] || '';
-    };
-    fill();
-    if('speechSynthesis' in window) speechSynthesis.addEventListener('voiceschanged', ()=>{ loadVoices(); fill(); });
-    // 每次打開選單都重新抓一次裝置語音（剛下載的語音才會出現）
-    sel.addEventListener('focus', ()=>{ loadVoices(); const cur=sel.value; fill(); sel.value=cur; });
-    sel.onchange = ()=>{
-      voicePref[k] = sel.value;
-      try{ localStorage.setItem('voicePref', JSON.stringify(voicePref)) }catch(e){}
-      speak(sample, k==='zh'?'zh-TW':'en-US', k==='zh'?0.9:0.7);
-    };
-    wrap.appendChild(sel);
-    return wrap;
-  };
-  box.append(make('zh','中文聲音', /^zh/i, '你好，我們來玩遊戲吧！'), make('en','英文聲音', /^en/i, 'Find the bird.'));
-  return box;
-}
-
-/* 聲音測試：一個嗶聲（測喇叭）＋一句語音（測語音合成），結果直接顯示在畫面上 */
-function soundTest(logEl){
-  return ()=>{
-    const lines = [];
-    const show = s => { lines.push(s); logEl.textContent = lines.join('｜'); };
-    // 1. 嗶聲
+/* ============ 聲音：錄音與播放 ============ */
+let blobUrl = null;
+function playBlob(blob){
+  return new Promise(res=>{
     try{
-      const AC = window.AudioContext || window.webkitAudioContext;
-      const ac = new AC(); const o = ac.createOscillator(); const g = ac.createGain();
-      o.frequency.value = 660; g.gain.value = 0.2; o.connect(g); g.connect(ac.destination);
-      o.start(); o.stop(ac.currentTime + 0.25);
-      show('嗶聲：已播放');
-    }catch(e){ show('嗶聲：失敗 '+e.name); }
-    // 2. 語音（在點擊當下同步呼叫）
-    if(!('speechSynthesis' in window)){ show('語音：此瀏覽器不支援'); return; }
-    const ss = speechSynthesis;
-    let vs = []; try{ vs = ss.getVoices() }catch(e){}
-    const zhN = vs.filter(v=>/zh/i.test(v.lang)).length, enN = vs.filter(v=>/en/i.test(v.lang)).length;
-    show(`語音數 ${vs.length}（中 ${zhN}／英 ${enN}）`);
-    try{
-      ss.cancel(); ss.resume();
-      const u = new SpeechSynthesisUtterance('Hello! 你好！');
-      u.lang = 'zh-TW'; u.rate = 0.9; u.volume = 1;
-      let started = false;
-      u.onstart = ()=>{ started = true; show('語音：開始唸了'); };
-      u.onend = ()=>show('語音：唸完了');
-      u.onerror = e=>show('語音錯誤：'+(e.error||'unknown'));
-      ss.speak(u);
-      setTimeout(()=>{ if(!started) show('語音：3 秒沒反應'+(ss.speaking?'（卡在唸的狀態）':'')+(ss.pending?'（排隊中）':'')); }, 3000);
-    }catch(e){ show('語音：例外 '+e.name); }
+      if(blobUrl) URL.revokeObjectURL(blobUrl);
+      blobUrl = URL.createObjectURL(blob);
+      player.src = blobUrl;
+      let done=false; const fin=()=>{ if(!done){ done=true; res(); } };
+      player.onended = fin; player.onerror = fin;
+      setTimeout(fin, 8000);
+      const p = player.play(); if(p) p.catch(fin);
+    }catch(e){ res(); }
+  });
+}
+const canRecord = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+// 開始錄音；回傳 {stop(), done: Promise<Blob|null>}
+async function startRecording(maxMs){
+  const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+  try{ if(navigator.audioSession) navigator.audioSession.type = 'play-and-record'; }catch(e){}
+  const mime = ['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(m=>{ try{ return MediaRecorder.isTypeSupported(m) }catch(e){ return false } });
+  const mr = new MediaRecorder(stream, mime ? {mimeType:mime} : undefined);
+  const chunks = [];
+  mr.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+  const done = new Promise(res=>{
+    mr.onstop = ()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
+      res(chunks.length ? new Blob(chunks, {type: mr.mimeType || mime || 'audio/mp4'}) : null);
+    };
+  });
+  mr.start();
+  const timer = setTimeout(()=>{ try{ mr.state!=='inactive' && mr.stop() }catch(e){} }, maxMs);
+  const t0 = Date.now();
+  // 剛開始錄的 0.6 秒內不理會「停止」（避免連按錄到空白）
+  return { stop(){ if(Date.now()-t0 < 600) return; clearTimeout(timer); try{ mr.state!=='inactive' && mr.stop() }catch(e){} }, done };
+}
+// IndexedDB：存爸媽錄的注音
+const idb = (()=>{
+  let dbp = null;
+  const open = ()=> dbp || (dbp = new Promise((res,rej)=>{
+    try{ const r = indexedDB.open('star-garden', 1);
+      r.onupgradeneeded = ()=> r.result.createObjectStore('zy');
+      r.onsuccess = ()=> res(r.result); r.onerror = ()=> rej(r.error);
+    }catch(e){ rej(e) }
+  }));
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((res,rej)=>{ const t = db.transaction('zy', mode); const st = t.objectStore('zy'); const q = fn(st); t.oncomplete = ()=>res(q && q.result); t.onerror = ()=>rej(t.error); }); };
+  return {
+    get: k => tx('readonly', s=>s.get(k)).catch(()=>null),
+    put: (k,v) => tx('readwrite', s=>s.put(v,k)).catch(()=>null),
+    del: k => tx('readwrite', s=>s.delete(k)).catch(()=>null),
+    keys: () => tx('readonly', s=>s.getAllKeys()).catch(()=>[])
   };
+})();
+const zyRecs = new Map();
+// 以 {type, data:ArrayBuffer} 存（Safari 存 Blob 有時不穩）
+const saveRec = async (k, blob) => { try{ await idb.put(k, {type: blob.type, data: await blob.arrayBuffer()}); }catch(e){} };
+idb.keys().then(async ks=>{ for(const k of (ks||[])){ const v = await idb.get(k); if(v && v.data) zyRecs.set(k, new Blob([v.data], {type: v.type||'audio/mp4'})); } });
+
+/* ============ 注音怎麼唸 ============ */
+// 模式：'homo' 用同音字（玻）／'symbol' 讓語音直接唸符號（ㄅ）。有爸媽錄音時一律用錄音。
+let zyMode = lsGet('zyMode', 'homo');
+const zyText = c => zyMode==='symbol' ? c : ZY[c][0];
+function zyKey(c){                      // 只唸注音本身
+  if(zyRecs.has(c)) return playBlob(zyRecs.get(c));
+  return speak(zyText(c), 'zh-TW', 0.75);
+}
+function zySay(c){                      // 「ㄅ，爸爸的ㄅ」
+  const word = ZY[c][1];
+  if(zyRecs.has(c)) return say({zy:c}, word+'的', {zy:c});
+  return say(`${zyText(c)}，${word}的${zyText(c)}`);
 }
 
-/* icons */
+/* ============ 圖示 ============ */
 const ICON = {
   listen:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25h10l14-11v36L20 39H10z" fill="#fff"/><path d="M43 23a12 12 0 0 1 0 18M50 16a22 22 0 0 1 0 32"/></svg>',
   repeat:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><rect x="22" y="6" width="20" height="34" rx="10" fill="#fff"/><path d="M13 30a19 19 0 0 0 38 0M32 49v9M22 58h20"/></svg>',
@@ -275,320 +358,393 @@ const ICON = {
   math:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M18 10v20M8 20h20M38 20h18M10 44l16 14M26 44L10 58M38 46h18M38 56h18"/></svg>'
 };
 
-/* router */
-function setTitle(t){ $('#title').innerHTML=zy(t) }
-$('#homeBtn').onclick = home;
+/* ============ 頁面切換 ============ */
+function setTitle(t){ $('#title').textContent = t; }
 let cleanup = null;
-function go(fn){ if(cleanup){cleanup();cleanup=null} stage.innerHTML=''; fn(); stage.scrollTop=0; }
+function go(fn){ if(cleanup){ try{cleanup()}catch(e){} cleanup=null } stopTalking(); stage.innerHTML=''; fn(); stage.scrollTop=0; }
+$('#homeBtn').onclick = home;
+$('#starBtn').onclick = stickerBook;
 
 function home(){ go(()=>{
   setTitle('小星星樂園');
+  const w = el('div','homewrap');
   const g = el('div','home');
   [['t1','listen','聽一聽','Listen',listenGame],['t2','repeat','跟我唸','Say it',repeatGame],
    ['t3','trace','描一描','Trace',traceGame],['t4','math','算一算','Count',mathGame]].forEach(([c,ic,zhT,en,fn])=>{
-    const b = el('button','tile '+c, ICON[ic]+`<b>${zy(zhT)}</b><small>${en}</small>`);
-    b.onclick = ()=>{ fn(); };
-    g.appendChild(b);
+    const b = el('button','tile '+c, ICON[ic]+`<b>${zhT}</b><small>${en}</small>`);
+    b.onclick = fn; g.appendChild(b);
   });
-  stage.appendChild(g);
-  const tb = el('div','soundtest');
-  const tbtn = el('button','btn plain','🔈 測試聲音');
-  const tlog = el('div','tlog','沒聲音時請按這裡，並把下面顯示的文字告訴我');
-  tbtn.onclick = soundTest(tlog);
-  tb.append(tbtn, tlog, voicePicker());
-  stage.appendChild(tb);
-  stage.appendChild(el('p','note','請開啟聲音。「跟我唸」會試著使用麥克風；不能用時，改由爸爸媽媽按按鈕評分。'));
+  const n = stickerCount();
+  const bar = el('button','bookbar', `<span class="bk">📒</span><span><b>貼紙本</b><span class="sub">已收集 ${n} / ${STICKERS.length} 張・再 ${PER_STICKER - stars % PER_STICKER} 顆星換下一張</span></span><span class="mini">${STICKERS.slice(0,n).slice(-6).join('')}</span>`);
+  bar.onclick = stickerBook;
+  const pl = el('button','parentlink','⚙ 爸媽設定（聲音、錄注音）');
+  pl.onclick = settings;
+  w.append(g, bar, pl);
+  stage.appendChild(w);
 })}
 
-/* 注音資料：唸音（用同音字讓語音正確發音）、例詞、圖、語音辨識可接受的同音字 */
-const ZY = {
-  'ㄅ':['玻','爸爸','👨','玻波播剝撥伯博'],'ㄆ':['坡','葡萄','🍇','坡潑婆破'],'ㄇ':['摸','媽媽','👩','摸模魔磨默'],'ㄈ':['佛','飛機','✈️','佛'],
-  'ㄉ':['得','弟弟','👦','得德的'],'ㄊ':['特','兔子','🐰','特'],'ㄋ':['呢','牛奶','🥛','呢訥'],'ㄌ':['勒','老虎','🐯','勒樂了'],
-  'ㄍ':['哥','哥哥','👦','哥歌個各格鴿'],'ㄎ':['科','蝌蚪','🐸','科可課顆渴棵'],'ㄏ':['喝','花','🌸','喝和河合賀'],
-  'ㄐ':['機','雞','🐔','機雞基幾記雞'],'ㄑ':['欺','氣球','🎈','欺七期其起氣'],'ㄒ':['希','西瓜','🍉','希西吸洗系'],
-  'ㄓ':['知','蜘蛛','🕷️','知之只直紙蜘'],'ㄔ':['吃','車子','🚗','吃池遲尺'],'ㄕ':['詩','獅子','🦁','詩師十是事獅'],'ㄖ':['日','日出','🌅','日'],
-  'ㄗ':['資','字','✏️','資字子自'],'ㄘ':['疵','刺蝟','🦔','疵次此詞刺'],'ㄙ':['思','三','3️⃣','思絲四死私司'],
-  'ㄧ':['衣','衣服','👕','衣一醫依'],'ㄨ':['烏','烏龜','🐢','烏屋五無午'],'ㄩ':['迂','魚','🐟','迂魚雨玉於'],
-  'ㄚ':['啊','嘴巴','👄','啊阿'],'ㄛ':['喔','公雞喔喔','🐓','喔哦噢'],'ㄜ':['鵝','白鵝','🦢','鵝餓額惡呃'],'ㄝ':['耶','耶誕節','🎄','耶也夜葉'],
-  'ㄞ':['哀','愛心','❤️','哀愛矮挨'],'ㄟ':['欸','杯子','🥤','欸誒'],'ㄠ':['凹','貓','🐱','凹奧熬襖'],'ㄡ':['歐','狗','🐶','歐偶嘔'],
-  'ㄢ':['安','飯','🍚','安按暗岸'],'ㄣ':['恩','門','🚪','恩嗯'],'ㄤ':['昂','糖','🍬','昂'],'ㄥ':['鞥','風','🌬️','鞥'],'ㄦ':['兒','耳朵','👂','兒二而耳']
-};
-const ZY_LIST = Object.keys(ZY);
-const zySay = c => { const [s,word]=ZY[c]; return zh(`${s}，${word}的${s}`,0.75); };
-
-/* 1. listen: find the picture (English) or the 注音 symbol */
+/* ============ 1. 聽一聽 ============ */
+// 一組 4 題同主題的英文，再 3 題注音，然後換新主題
 function listenGame(){ go(()=>{
   setTitle('聽一聽');
   const w = el('div','wrap'); stage.appendChild(w);
-  let locked=false, round_n=0;
-  const prompt = el('div','prompt'); const cards = el('div','cards');
-  w.append(prompt, cards);
+  const chip = el('div','chip'); const prompt = el('div','prompt'); const cards = el('div','cards');
+  w.append(chip, prompt, cards);
+  let queue = [], locked = false, lastTheme = null;
+  function refill(){
+    const th = pick(THEMES.filter(t=>t!==lastTheme)); lastTheme = th;
+    shuffle(th.words).slice(0,4).forEach(wd=>queue.push({t:'en', wd, th}));
+    shuffle(ZY_LIST).slice(0,3).forEach(c=>queue.push({t:'zy', c}));
+  }
   function round(){
-    locked=false; round_n++;
-    const zyRound = round_n % 2 === 0;
-    let opts, target, sayTarget, sayOpt, label;
-    if(zyRound){
-      opts = shuffle(ZY_LIST).slice(0,3); target = pick(opts);
-      sayTarget = ()=>{ const k=ZY[target][0]; return zh(`${k}，${k}，${k}`,0.7); };
-      sayOpt = o => zh('這是 '+ZY[o][0],0.8);
-      label = '哪一個注音？';
+    locked = false;
+    if(!queue.length) refill();
+    const q = queue.shift();
+    let opts, target, sayTarget, sayOpt;
+    if(q.t==='zy'){
+      target = q.c; opts = shuffle([target, ...shuffle(ZY_LIST.filter(c=>c!==target)).slice(0,2)]);
+      chip.textContent = 'ㄅㄆㄇ 注音';
+      prompt.innerHTML = '<span>聽聽看，是哪一個？</span>';
+      sayTarget = ()=>say({zy:target}, {zy:target}, {zy:target});
+      sayOpt = o => say('這是', {zy:o});
     } else {
-      opts = shuffle(WORDS).slice(0,3); target = pick(opts);
+      target = q.wd; opts = shuffle([target, ...shuffle(q.th.words.filter(x=>x!==target)).slice(0,2)]);
+      chip.textContent = q.th.icon+' '+q.th.name;
+      prompt.innerHTML = `<span>找出 <span class="en">${escH(target.en)}</span></span>`;
       sayTarget = ()=>say('找出', `${target.en}. ${target.en}. ${target.en}.`);
       sayOpt = o => say('這是', o.en);
-      label = `找出 <span class="en">${target.en}</span>`;
     }
-    prompt.innerHTML = `<span>${label}</span>`;
-    const s = el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick=sayTarget;
+    const s = el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick = sayTarget;
     prompt.prepend(s);
-    cards.innerHTML='';
+    cards.innerHTML = '';
     opts.forEach(o=>{
-      const c = el('button', zyRound ? 'pic zycard' : 'pic', zyRound ? o : o.e);
-      c.setAttribute('aria-label', zyRound ? o : o.zh);
+      const isZ = q.t==='zy';
+      const c = el('button', isZ ? 'pic zycard' : 'pic', isZ ? o : o.e);
+      c.setAttribute('aria-label', isZ ? o : o.zh);
       c.onclick = async ()=>{
         if(locked) return;
         if(o===target){
-          locked=true; c.classList.add('ok'); addStar(); cheer();
-          await capped(zyRound ? zySay(o) : say('對了！', o.en));
-          setTimeout(round,500);
+          locked = true; c.classList.add('ok'); addStar(); cheer();
+          await capped(isZ ? zySay(o) : say('對了！', o.en), 3500);
+          setTimeout(round, 500);
         } else { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); await sayOpt(o); sayTarget(); }
       };
       cards.appendChild(c);
     });
-    setTimeout(sayTarget,300);
+    setTimeout(sayTarget, 300);
   }
   round();
 })}
 
-/* 2. repeat after me: English words and 注音 mixed */
+/* ============ 2. 跟我唸（錄音回放） ============ */
 function repeatGame(){ go(()=>{
   setTitle('跟我唸');
   const w = el('div','wrap'); stage.appendChild(w);
-  const ITEMS = shuffle([...WORDS.map(x=>({t:'en',...x})), ...ZY_LIST.map(c=>({t:'zy',c}))]);
-  let i = 0, rec=null, micBlocked=false;
-  const big = el('div','big'); const status = el('div','status'); const row = el('div','row'); const extra = el('div');
-  w.append(big, status, row, extra);
-  const setStatus = (t, heard) => { status.dataset.t = t; status.innerHTML = escH(t).replace('{H}', heard ? `<span class="en">${escH(heard)}</span>` : ''); };
-  const listenB = el('button','btn plain','🔊 聽'); const micB = el('button','btn red','🎤 我來唸');
+  let queue = [], i = -1, lastTheme = null, items = [];
+  function refill(){
+    const th = pick(THEMES.filter(t=>t!==lastTheme)); lastTheme = th;
+    shuffle(th.words).slice(0,5).forEach(wd=>queue.push({t:'en', ...wd, th}));
+    shuffle(ZY_LIST).slice(0,3).forEach(c=>queue.push({t:'zy', c}));
+  }
+  const chip = el('div','chip'); const big = el('div','big'); const status = el('div','status');
+  const row = el('div','row'); const judge = el('div','row');
+  w.append(chip, big, status, row, judge);
+  const listenB = el('button','btn plain','🔊 聽');
+  const micB = el('button','btn red','🎤 我來唸');
   const prevB = el('button','btn plain','◀'); const nextB = el('button','btn plain','▶');
   prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
   row.append(prevB, listenB, micB, nextB);
-  const lev=(a,b)=>{const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]};
-  const cur = ()=>ITEMS[i];
-  const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : speak(it.en,'en-US',EN_RATE); };
-  let show = function(){
-    const it = cur(); extra.innerHTML=''; setStatus('先聽，再跟著唸');
+  const goodB = el('button','btn green','⭐ 唸得很好');
+  const againB = el('button','btn plain','🔁 再唸一次');
+  judge.append(goodB, againB);
+  let recCtl = null, recStarting = false, lastBlob = null, advancing = false;
+  const cur = ()=>items[i];
+  const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : say(it.en); };
+  function showJudge(on){ judge.hidden = !on; }
+  function show(){
+    const it = cur(); lastBlob = null; showJudge(false); advancing = false;
+    status.textContent = '先聽，再按 🎤 跟著唸';
     if(it.t==='zy'){
+      chip.textContent = 'ㄅㄆㄇ 注音';
       const [, word, emo] = ZY[it.c];
       big.innerHTML = `<div class="zybig">${it.c}</div><div class="zh">${emo} ${escH(word)}</div>`;
     } else {
-      big.innerHTML = `<div class="emo">${it.e}</div><div class="word">${it.en}</div><div class="zh">${it.zh}</div>`;
+      chip.textContent = it.th.icon+' '+it.th.name;
+      big.innerHTML = `<div class="emo">${it.e}</div><div class="word">${escH(it.en)}</div><div class="zh">${escH(it.zh)}</div>`;
     }
-    setTimeout(sayCur,250);
+    setTimeout(sayCur, 250);
   }
-  let advancing = false;
+  function next(){ i++; if(i >= items.length){ if(!queue.length) refill(); items.push(queue.shift()); } show(); }
+  function prev(){ if(i>0){ i--; show(); } }
   async function success(){
     if(advancing) return; advancing = true;
-    addStar(); cheer(); extra.innerHTML=''; setStatus('唸得好棒！');
+    showJudge(false); addStar(); cheer(); status.textContent = '唸得好棒！';
     const it = cur();
-    await capped(it.t==='zy' ? zh('好棒！'+ZY[it.c][0]) : say('好棒！', it.en));
-    setTimeout(()=>{ advancing = false; i=(i+1)%ITEMS.length; show(); }, 600);
+    await capped(it.t==='zy' ? say('好棒！', {zy:it.c}) : say('好棒！', it.en), 3500);
+    setTimeout(next, 600);
   }
-  function parentPanel(reason){
-    extra.innerHTML='';
-    const p = el('div','parent');
-    p.appendChild(el('p','', (reason ? reason+'<br>' : '') + '小朋友唸完了嗎？請爸爸媽媽評分：'));
-    const r = el('div','row');
-    const ok = el('button','btn green','⭐ 唸得很好'); const again = el('button','btn plain','再試一次');
-    ok.onclick = success; again.onclick = sayCur;
-    r.append(ok, again); p.appendChild(r); extra.appendChild(p);
-  }
-  // 小朋友常見的唸法、辨識常聽成的字，都算對
-  const EN_OK = {
-    apple:'apples app appo happy apo upple',cat:'cats kat kit cut cap cad cart kate',dog:'dogs doc dug dock dawg talk',
-    fish:'fishes fist fresh fits fit fi fis',sun:'son some sum sung song sunny',car:'cars card call core cow ca caw',
-    ball:'balls bowl bo boll bull bow pole bore',egg:'eggs ag ache edge eg ek',bird:'birds bert burt bud bed word heard third bert',
-    banana:'bananas nana banna',star:'stars starr stop store sta',cake:'cakes kate cape kick take kay',
-    duck:'ducks doc dock dark duke dug',tree:'trees three free tray tea tre',milk:'milks mill meal mook milky mil'
-  };
-  // 粗略的「發音骨架」：去母音、把台灣小朋友容易混的音合併
-  const skel = w => w.toLowerCase().replace(/ph/g,'f').replace(/th/g,'s').replace(/ck|c|q/g,'k').replace(/v/g,'b').replace(/z/g,'s')
-                     .replace(/r/g,'l').replace(/(.)\1+/g,'$1').replace(/(?!^)[aeiouy]/g,'');
-  function enMatch(word, target){
-    if(!word) return false;
-    if(word===target || word.replace(/s$/,'')===target) return true;
-    if((EN_OK[target]||'').split(' ').includes(word)) return true;
-    const tol = target.length<=3 ? 1 : Math.floor(target.length/3)+1;
-    if(lev(word,target) <= tol && word[0]===target[0]) return true;
-    if(skel(word)===skel(target)) return true;
-    return false;
-  }
-  function judge(texts){
-    const it = cur();
-    const raw = texts.map(t=>t.trim()).filter(Boolean);
-    if(it.t==='zy'){
-      const [s, word, , homo] = ZY[it.c];
-      const ok = raw.some(t => t.includes(it.c) || t.includes(word) || [...(homo+s)].some(h=>t.includes(h)));
-      return {ok, heard: raw[0]};
+  function stopRec(){ if(recCtl){ recCtl.stop(); } }
+  listenB.onclick = ()=>{ stopRec(); sayCur(); };
+  prevB.onclick = ()=>{ stopRec(); prev(); };
+  nextB.onclick = ()=>{ stopRec(); next(); };
+  goodB.onclick = success;
+  againB.onclick = ()=>{ showJudge(false); micB.click(); };
+  micB.onclick = async ()=>{
+    if(recStarting) return;                        // 麥克風還在啟動，先不理會連按
+    if(recCtl){ stopRec(); return; }               // 第二次按＝說完了
+    stopTalking(); showJudge(false);
+    if(!canRecord()){
+      status.textContent = '現在請大聲唸出來！唸完按 ⭐';
+      showJudge(true); return;
     }
-    const alts = raw.map(t=>t.toLowerCase().replace(/[^a-z ]/g,' ').trim());
-    const target = it.en;
-    const ok = alts.some(t => t.replace(/\s/g,'').includes(target) || t.split(/\s+/).some(x=>enMatch(x,target)));
-    return {ok, heard: alts[0]};
-  }
-  let tries = 0;
-  const _show = show;
-  show = function(){ tries = 0; _show(); };
-  listenB.onclick = sayCur;
-  prevB.onclick = ()=>{ i=(i-1+ITEMS.length)%ITEMS.length; show(); };
-  nextB.onclick = ()=>{ i=(i+1)%ITEMS.length; show(); };
-  micB.onclick = ()=>{
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SR || micBlocked){ setStatus('現在請大聲唸出來！'); parentPanel(micBlocked?'':'這台裝置不支援語音辨識。'); return; }
-    if(rec){ try{rec.abort()}catch(e){} rec=null; }
+    recStarting = true; status.textContent = '準備中…';
     try{
-      speechSynthesis.cancel();
-      const r = new SR(); rec = r;
-      r.lang = cur().t==='zy' ? 'zh-TW' : 'en-US';
-      r.interimResults = true;      // 一邊說一邊比對，聽到對的就馬上過關
-      r.continuous = true;          // 小朋友會停頓，不要一停就結束
-      r.maxAlternatives = 5;
-      let finished = false, heardAny = '';
-      const finish = (ok)=>{
-        if(finished) return; finished = true;
-        clearTimeout(timer); try{ r.stop() }catch(e){}
-        micB.classList.remove('listening');
-        if(ok){ success(); return; }
-        tries++;
-        if(tries >= 3){ setStatus('很接近了！'); success(); return; }   // 試三次就給過，保持信心
-        if(heardAny) setStatus('聽起來像「{H}」，再試一次', heardAny); else setStatus('沒聽到聲音，再大聲一點');
-        sayCur();
-      };
-      const timer = setTimeout(()=>finish(false), 6000);
-      r.onresult = e=>{
-        const texts = [];
-        for(let k=e.resultIndex;k<e.results.length;k++) for(let a=0;a<e.results[k].length;a++) texts.push(e.results[k][a].transcript);
-        const {ok, heard} = judge(texts);
-        if(heard) heardAny = heard;
-        if(ok) finish(true);
-      };
-      r.onerror = e=>{
-        if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){
-          finished = true; clearTimeout(timer); micB.classList.remove('listening');
-          micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。');
-        } else if(e.error!=='aborted') finish(false);
-      };
-      r.onend = ()=>finish(false);
-      r.start(); micB.classList.add('listening'); setStatus('請說！在聽喔…');
-    }catch(err){ micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。'); }
+      recCtl = await startRecording(4000);
+      recStarting = false;
+    }catch(e){
+      recStarting = false;
+      status.textContent = '這裡不能錄音，請大聲唸出來，唸完按 ⭐';
+      showJudge(true); return;
+    }
+    micB.classList.add('rec'); micB.textContent = '⏹ 說完了';
+    status.textContent = '請說！';
+    const blob = await recCtl.done; recCtl = null;
+    micB.classList.remove('rec'); micB.textContent = '🎤 我來唸';
+    if(!blob){ status.textContent = '沒有錄到聲音，再試一次'; return; }
+    lastBlob = blob;
+    status.textContent = '聽聽你唸的 👂';
+    await playBlob(blob);
+    status.textContent = '再聽一次老師唸';
+    await sleep(300); await sayCur();
+    status.textContent = '一樣嗎？唸得好就按 ⭐';
+    showJudge(true);
   };
-  cleanup = ()=>{ try{rec&&rec.abort()}catch(e){} };
-  show();
+  cleanup = ()=>{ stopRec(); };
+  next();
 })}
 
-/* 3. trace letters & numbers */
+/* ============ 3. 描一描（筆順） ============ */
+// 字形以 100×100 為座標。英文與數字：自編筆順；注音：教育部筆順資料。
+// 指令：M x y／L x y／A cx cy rx ry 起角 終角（角度：0=右、90=下，順時針為正）
+const LETTER_PATHS = {
+  A:['M50 14 L22 86','M50 14 L78 86','M33 60 L67 60'],
+  B:['M28 14 L28 86','M28 14 L52 14 A52 32 18 18 -90 90 L28 50','M28 50 L55 50 A55 68 20 18 -90 90 L28 86'],
+  C:['A52 50 30 36 -35 -325'],
+  D:['M28 14 L28 86','M28 14 L45 14 A45 50 30 36 -90 90 L28 86'],
+  E:['M30 14 L30 86','M30 14 L72 14','M30 50 L66 50','M30 86 L72 86'],
+  F:['M30 14 L30 86','M30 14 L72 14','M30 50 L66 50'],
+  G:['A52 50 30 36 -35 -345','M58 56 L82 56 L82 82'],
+  H:['M26 14 L26 86','M74 14 L74 86','M26 50 L74 50'],
+  I:['M50 14 L50 86','M34 14 L66 14','M34 86 L66 86'],
+  J:['M66 14 L66 66 A48 66 18 18 0 180'],
+  K:['M30 14 L30 86','M72 14 L30 56','M44 44 L74 86'],
+  L:['M32 14 L32 86 L72 86'],
+  M:['M22 14 L22 86','M22 14 L50 62 L78 14 L78 86'],
+  N:['M26 14 L26 86','M26 14 L74 86 L74 14'],
+  O:['A50 50 30 36 -90 -450'],
+  P:['M28 14 L28 86','M28 14 L52 14 A52 33 20 19 -90 90 L28 52'],
+  Q:['A50 50 30 36 -90 -450','M56 66 L80 90'],
+  R:['M28 14 L28 86','M28 14 L52 14 A52 33 20 19 -90 90 L28 52','M46 52 L74 86'],
+  S:['A50 32 22 18 -15 -270 A50 68 24 18 -90 165'],
+  T:['M20 14 L80 14','M50 14 L50 86'],
+  U:['M26 14 L26 60 A50 60 24 26 180 0 L74 14'],
+  V:['M22 14 L50 86 L78 14'],
+  W:['M14 14 L32 86 L50 36 L68 86 L86 14'],
+  X:['M26 14 L74 86','M74 14 L26 86'],
+  Y:['M26 14 L50 50','M74 14 L50 50 L50 86'],
+  Z:['M26 14 L74 14 L26 86 L74 86'],
+  '1':['M38 26 L52 14 L52 86'],
+  '2':['A50 34 22 20 -165 20 L26 86 L76 86'],
+  '3':['A48 32 22 18 -160 90 A48 68 24 18 -90 160'],
+  '4':['M58 14 L24 64 L80 64','M62 34 L62 86'],
+  '5':['M32 14 L37 46 A50 64 22 22 -125 145','M32 14 L72 14'],
+  '6':['M66 16 L40 45 A50 64 22 21 -117 -477'],
+  '7':['M24 14 L76 14 L40 86'],
+  '8':['A50 32 20 17 -10 -270 A50 68 24 18 -90 270 A50 32 20 17 90 -10'],
+  '9':['A50 34 22 20 -5 -365 L70 86']
+};
+function pathPoints(cmd){
+  const t = cmd.trim().split(/\s+/); const pts = []; let k = 0;
+  while(k < t.length){
+    const c = t[k++];
+    if(c[0]==='M' || c[0]==='L'){ const x = +(c.slice(1)||t[k++]); const y = +t[k++]; pts.push([x,y]); }
+    else if(c[0]==='A'){
+      const cx=+(c.slice(1)||t[k++]), cy=+t[k++], rx=+t[k++], ry=+t[k++], a0=+t[k++], a1=+t[k++];
+      const n = Math.max(2, Math.ceil(Math.abs(a1-a0)/6));
+      for(let s=0;s<=n;s++){ const a=(a0+(a1-a0)*s/n)*Math.PI/180; pts.push([cx+rx*Math.cos(a), cy+ry*Math.sin(a)]); }
+    }
+  }
+  return pts;
+}
+const ZY_STROKES={"ㄅ":[{"o":"M35.7 78.4L33.9 76.3Q33.3 75.8 33.5 75.6Q33.6 75.4 34.1 75.6L36.9 77Q43.1 80 44.6 80.5Q46 80.9 47.6 80.9Q50.9 80.8 54 78.3Q57.2 75.9 62 68.7Q66.9 61.4 69.9 53.8Q73 46.2 73.9 42.7L74.5 40Q74.7 39.1 74.9 38.5Q75 38 74.9 37.3Q74.8 36.3 73.8 35.1Q72.8 33.9 70.2 34.1L60.5 35.1L49.3 36.3L38.6 37.3Q26.9 38.6 21.2 39.6Q15.4 40.6 14.9 40.5Q12.7 40.5 11.5 38.6Q10.4 36.7 10.4 34.5Q10.4 33.4 10.7 32.8Q11 32.2 12.3 31.2Q13.5 30.1 14.5 29.2Q15.4 28.2 18.6 24.3Q21.7 20.5 23.6 16.9Q25.5 13.3 25.9 12.4Q26.4 11.4 27.6 8.5Q28.7 5.6 29 5.3Q29.3 5 29.8 4.9Q30.4 4.8 32.8 5.9Q35.3 7 36.4 8.2Q37.4 9.3 37.5 9.8Q37.5 10.3 36.9 11.3L36 13.1Q35.3 14.3 33.3 17.5Q31.2 20.7 28 24.6L24.8 28.3Q24.1 29.2 23.7 29.6Q23.3 30.1 23.2 30.3Q23.1 30.6 23 30.9Q23 31.2 23.6 31.6Q24.2 32 25.8 31.9Q26.8 31.9 31.3 31.4Q35.7 30.9 53.3 29.4L65.7 28.3Q72.1 27.8 73.8 27.4Q75.4 27 75.7 27Q76.3 27 76.8 27.3Q77.4 27.6 78.8 28.9Q80.2 30.1 80.7 30.8Q81.3 31.4 82.5 33Q83.8 34.5 84.3 35.3Q84.7 36 84.8 36.8Q84.8 37.6 84.4 38.7Q83.3 41.4 83 42.4L82 45.6L79.5 52.8Q78.7 55 76.8 59.6Q74.8 64.3 72.8 68.6Q70.8 73 67.5 77.9Q64.2 82.8 59.1 86.1Q54.1 89.4 51.6 89.9Q49.1 90.4 47.3 90.4Q44.7 90.5 43.7 89.6Q42.8 88.7 41.4 86.3Q40 83.9 38.9 82.4Q37.8 80.9 35.7 78.4Z","t":[[31.6,9.5],[14.7,35.8],[74,31.2],[80,36.5],[61.9,77.9],[47.7,86.5],[39.1,80]]}],"ㄆ":[{"o":"M49.7 57.9Q55.3 52.1 58.1 48.7Q61 45.3 64.5 40.7Q68 36.1 68.5 34.6Q69.1 33.1 69.1 32.2Q69 31.1 68.2 30.3Q67.3 29.5 62.5 30L53 31.2Q51.7 31.3 44.7 32.3Q37.6 33.3 35 34Q32.3 34.6 30.7 35.1L26.7 36.4Q24.7 37 24 36.9Q22 36.8 20.7 34.4Q19.5 32 19.5 31.2Q19.5 30.6 19.8 30.1Q20.1 29.6 21.2 28.5Q22.2 27.5 25 24.1Q27.9 20.7 30 17.6Q32 14.6 32.7 13.2Q33.4 11.9 34.1 10.4L35.3 7.9Q35.7 6.9 36.6 6.8Q37.4 6.7 39.4 7.8Q41.4 8.9 42.1 10.1Q42.7 11.3 42.7 11.9Q42.6 12.6 41.1 14.2Q39.6 15.9 39.1 16.6Q38.6 17.2 38 18L36 20.9Q33.6 24.2 31.6 26.5L30.4 28Q29.7 28.8 29.8 29Q29.9 29.2 30.7 29.1L34.6 28.5L53.6 25.6Q56 25.3 60.7 24.7Q65.3 24 68 23.4Q70.8 22.8 71.3 22.8Q72.7 22.8 74.1 23.8Q75.5 24.8 77.3 26.4Q79 28 79.7 28.9Q80.4 29.9 80.4 30.9Q80.5 32 79.7 33.2Q79.3 33.8 78 35.4Q76.7 37 75.7 38.2L73.1 41.8Q70 45.9 67.1 49.7Q64.2 53.5 56.6 61.5L51.5 66.5Q43.6 73.1 38.2 76.7Q32.8 80.4 25.2 83.4Q17.6 86.4 14.2 87L12.6 87.3Q11.7 87.4 11.4 87.3Q11.1 87.1 11 86.8Q11 86.6 11.6 86.2L12.7 85.7Q20 82.2 26.7 77.4Q33.5 72.5 37.1 69.6Q40.7 66.7 45.3 62.2L49.7 57.9Z","t":[[38.4,10.9],[24,32.6],[70.9,26.5],[75.1,30.7],[48.8,65.1],[19.3,84]]},{"o":"M45.3 62.2L25.2 50L22.6 48.2Q22 47.9 21.6 47.6Q21.2 47.3 21.2 46.9Q21.3 46.5 22.4 46.7Q24 47 26.1 47.8L28.5 48.7Q33.5 50.6 49.7 57.9L56.6 61.5L68.7 67.6Q77.3 71.9 79.3 73.4Q81.3 75 82.3 76.4Q83.2 77.8 83.7 80.2Q84.2 82.7 84.2 84.4Q84.1 85.9 83.7 87.1Q83.3 88.4 81.9 88.5Q79.9 88.6 78 87.2Q76.2 85.8 74.6 84.4Q73.1 83.1 70.7 80.9Q68.3 78.7 65.3 76.4Q62.4 74 51.5 66.5L45.3 62.2Z","t":[[26.7,49.1],[78.8,79.3]]}],"ㄇ":[{"o":"M17.4 27.6L17.4 41.9L17.9 57.4Q18 62.7 18.3 65.8L18.7 72L18.9 76.7Q19 78.5 18.3 80.9Q17.7 83.3 15.7 83.3Q13 83.3 11.5 78.9Q10 74.5 9.8 72.1Q9.5 69.8 9.4 66.4L9.2 59.6L8.6 32.2Q8.5 29.1 8.4 27.3Q8.4 25.5 8.3 24Q8.2 22.5 8.1 21.8L7.8 20.1Q7.8 19.6 7.9 19.2Q8 18.7 9.2 17.7Q10.3 16.7 12 16.7Q12.9 16.8 16.7 18.7L17.4 27.6Z","t":[[12.3,20.5],[15.3,79.1]]},{"o":"M16.7 18.7Q37 15.1 54.2 14.3L65.3 13.8Q68.7 13.6 70.2 13.4Q71.7 13.2 73.6 12.6Q75.4 11.9 76.1 11.9Q80.3 11.7 83.5 14.4Q86.6 17.1 87 18.7Q87.4 20.3 87.4 22.1Q87.4 24 87.3 27.4L86.9 33Q86.7 36 86.7 38.2L85.7 57.5Q85.4 63.1 85 67.9Q84.6 72.7 84.1 76.5Q83.6 80.3 82.6 81.9Q81.6 83.4 80.2 83.4Q79.1 83.5 77 82.2Q74.8 80.9 74.3 78.3Q73.8 75.8 73.9 74.6Q73.9 74.1 74.2 72.1Q74.6 70.1 74.9 65.9Q75.3 61.8 75.5 59.1L76.1 48.4Q76.2 45.3 76.3 43.7Q76.3 42.2 76.2 39.1Q76.1 35.2 76.1 33.8Q76 32.4 75.7 29.6Q75.4 26.8 75.1 25.3Q74.7 23.7 72.6 22.5Q70.5 21.3 64.3 21.5L57.4 21.7Q48.2 22 36.6 23.9Q25 25.7 17.4 27.6L16.7 18.7Z","t":[[19.1,22.8],[49.8,18.1],[78.8,17.2],[82.3,20.7],[78.4,77]]}],"ㄈ":[{"o":"M9.8 23.3Q9.4 22.6 8.5 21.7Q7.7 20.9 7.5 20.5Q7.4 20 7.4 19.4Q7.4 16.4 9.7 16.5L13.4 16.6Q17.4 16.7 22.1 16.7Q26.8 16.7 46.2 14.9L57.4 14Q63.4 13.4 66.3 13Q69.2 12.5 72.5 11.6Q75.7 10.7 76.8 10.6Q81.9 10.3 83.2 13.1Q84.5 15.9 84.5 17Q84.4 18.1 83.7 19Q82.9 19.8 79.6 20.5Q76.2 21.1 61.3 22L54 22.5Q33.8 23.7 20.1 24.1L9.8 23.3Z","t":[[11.9,19.8],[77.7,15.6]]},{"o":"M20.1 24.1L20.3 57.8Q20.3 63.3 20.6 66.9Q20.8 70.5 21.6 72.3Q22.4 74.2 24 75.1Q25.5 76 28.1 76.3Q30.6 76.7 38.4 76.4L67.4 75.7Q72.2 75.6 76.1 75.2Q80 74.7 80.8 74.7Q83.3 74.7 84.4 75.4Q85.6 76.1 86.8 77.8Q87.9 79.5 87.8 81.3Q87.7 82.2 87.3 82.8Q86.8 83.3 85.7 83.8Q84.5 84.2 79.7 84.1L71.8 84Q59.6 83.8 58.1 83.7Q55.1 83.7 46.4 83.9L39 84.1Q38.1 84.1 32.3 84.4Q26.6 84.7 25.8 84.7Q21.4 84.7 18.7 83.3Q16 81.8 14.7 77.3Q13.3 72.8 13 71Q12.8 69.3 12.7 67.4Q12.5 65.4 12.4 61.6Q12.3 57.8 12.3 57.7L11.1 34.4Q10.9 32.4 10.8 29.9Q10.6 27.4 10.4 25.7Q10.2 23.9 9.8 23.3L20.1 24.1Z","t":[[14.9,25.8],[16.7,74.7],[22.8,80.9],[81.2,80.5]]}],"ㄉ":[{"o":"M37.5 35.7L26.4 36.9Q23.4 37.2 21.3 37.6Q19.1 38 17.6 38.5Q16.1 38.9 15.4 38.8Q13.2 38.6 12 37.2Q10.7 35.7 10.6 35Q10.4 34.3 10.5 33.6Q10.5 32.7 10.9 32.1Q11.3 31.4 13.4 29Q15.5 26.6 16.8 24.7Q18.1 22.7 19.5 20.3Q20.9 17.9 21.8 16Q22.7 14.2 23.6 11.9Q24.4 9.6 24.7 8.6L25.2 6.5Q25.7 5 26.9 5Q27.9 5 30.6 7.3Q33.4 9.6 34 10.7Q34.6 11.8 34.6 12.5Q34.5 13.9 31.7 17.3L25.3 24.9Q22.6 28.1 21.5 29.2Q20.5 30.3 20.7 30.8Q21 31.9 23.6 31.5L31.4 30.5Q44.5 28.8 54.2 28L66.2 27.1Q69.8 26.8 72.4 26.2Q75 25.5 75.8 25.5Q78 25.6 80.1 27.7Q82.2 29.9 83.5 31.8Q84.8 33.7 84.7 35Q84.7 35.5 84.6 35.7Q84.5 36 83.8 37.3Q83.1 38.6 82.4 41.5L81.3 45.8Q79.2 53.4 77.3 58.6Q75.5 63.8 74.4 66.4Q73.3 69.1 71.1 73.4Q69 77.8 66.1 81.1Q63.2 84.5 58.4 87.5Q53.6 90.5 50.8 90.4Q49.3 90.3 48.5 89.6Q47.7 88.9 47.3 88.3Q46.9 87.6 45.8 85.3Q44.7 83 43.3 81.3Q41.9 79.5 41 78.6L39.7 77.3Q39.3 77.1 39.3 76.9Q39.2 76.6 39.2 76.3Q39.3 76 40.1 76.3L41.9 77.2Q47.6 80 51.1 80.1Q55.1 80.3 57.5 77.8Q59.9 75.3 63.7 69.3Q67.6 63.3 70.3 54.5Q73.1 45.7 73.7 42.3Q74.4 38.9 74.5 37.6Q74.7 36.4 74.7 35.4Q74.7 34.4 74.4 33.8Q73.3 31.8 67.1 32.2L43.5 34.1Q41 34.9 37.5 35.7Z","t":[[28.4,10.5],[14,34.7],[77.4,28.8],[79.5,32.8],[70.2,67],[53,87.7],[44.2,80.2]]},{"o":"M43.5 34.1Q46.5 36.3 47 36.8Q47.5 37.3 47.8 38.1Q48.2 38.9 48.3 39.7Q48.3 40.4 48 41.4Q47.3 44 45 47.9Q42.8 51.9 38.9 57.9Q35.1 63.9 27.5 71.1Q19.9 78.3 15.1 80.8L12.9 81.9Q11.9 82.5 11.6 82.4Q11.2 82.3 11 82Q10.9 81.7 11 81.4Q11.2 81.1 12 80.1L13.5 78.3L16.3 75.1Q18.3 72.7 19.4 71.3Q20.5 69.9 24.3 64.5Q28.2 59.1 30 56.4Q31.8 53.7 33.4 50.8Q35 47.9 36.3 45.2Q37.6 42.5 38.3 40.6Q39.1 38.7 39.4 38Q39.7 37.4 39.6 36.5Q39.4 35.5 37.5 35.7L43.5 34.1Z","t":[[43.3,37.2],[30,64],[16.3,77.9]]}],"ㄊ":[{"o":"M46.1 36.1L62.9 34.2L69 33.4Q70.3 33.3 72.1 33Q74 32.7 76.3 32.2Q78.6 31.7 80 31.6Q82.6 31.5 85 32.7Q87.4 33.9 88.4 35.8Q89.4 37.7 89.5 38.7Q89.5 39.7 89.1 40.1Q88.5 41 86.8 40.9Q86 40.9 82.8 40.8Q79.7 40.7 75.1 40.9L70.7 41.2Q66.3 41.4 62.5 41.8Q58.7 42.2 56 42.5L49.5 43.2L43.7 43.9L35.6 44.1L22.8 45.7Q21.8 45.9 17.8 46.6Q13.8 47.3 12.6 47.2Q11.1 47.1 9 46.1Q7 45 6.3 43.4Q5.7 41.8 5.7 41Q5.7 40.2 6 39.7Q6.2 39.2 6.8 38.9Q7.4 38.5 10.2 38.4L18.9 38Q30.3 37.6 38.4 36.7L46.1 36.1Z","t":[[12.1,43.3],[82.1,36]]},{"o":"M38.4 36.7Q39.9 32.5 41.2 28.2Q42.5 24 43.1 21.5L43.8 18.6Q44 17.9 44.3 14.8Q44.7 11.8 44.9 10.6Q45.2 9.4 47 9.3Q48 9.3 49.7 10.2Q51.5 11.2 53 13Q54.6 14.7 54.6 16.3Q54.7 17.9 54.6 18.4Q54.4 18.9 54.3 19.1Q54.1 19.3 53.4 20.1Q52.7 20.8 52.1 21.9Q51.5 23 50.9 24.4Q50.3 25.9 49.3 28.3Q48.4 30.8 48.3 31L46.1 36.1L43.7 43.9Q41.4 50.1 39.9 54.1Q38.4 58 37.6 59.9L35.6 64.7L33.6 69.6L32.3 72.6Q31.7 74 31.9 74.8Q32 75.4 32.5 76.1Q33.1 76.7 36.4 76.2L43.2 75.3Q53.1 74 68.1 70.7C74.5 68.8 72.3 73.9 69.8 75.6L29.3 85.3Q26.3 86 25.3 86Q24 86 23 85.5Q22.1 84.9 21 83.2Q20 81.4 19.6 80.5Q19.3 79.6 19.3 78.9Q19.3 78.3 19.6 77.5Q19.8 76.9 21.6 74.5Q23.3 72.1 24.7 69.8Q26 67.5 29 61Q32 54.5 35.6 44.1L38.4 36.7Z","t":[[49.5,14.2],[24.9,82.3],[69.8,73.3]]},{"o":"M68.1 70.7L62.5 59.3Q62.1 58.7 62.2 58.1Q62.2 57.6 63.1 58.1L64.5 59Q66.6 60.3 70.7 63.5Q74.8 66.7 77.7 70Q80.7 73.3 81.4 75.3Q82.1 77.3 82.1 79.2Q82 80.4 81.7 81.7Q81.4 83.1 80.4 84.6Q79.3 86.1 77.3 86Q75.9 86 75 85.2Q74.1 84.4 73.3 82.8L69.8 75.6L68.1 70.7Z","t":[[66.5,62.8],[77.9,81.4]]}],"ㄋ":[{"o":"M29 76.9L37 79Q40.1 79.9 41.9 79.8Q46.3 79.8 49.3 77.8Q52.4 75.8 53.6 74.7Q54.8 73.6 57.5 70.1Q60.2 66.5 62.8 60.8Q65.5 55.2 66.9 50.5L68.1 46.2Q68.9 43.4 69.1 42.5L69.3 40.8L69.5 39.8Q69.5 39.3 69.1 39.1Q68.7 38.9 66.9 39.2L51.8 42.1Q47.1 43 45.8 43.5Q44.5 44 44 43.9Q43.3 43.9 41.5 42.8Q39.7 41.8 39.6 40.3Q39.4 38.7 39.7 38.1Q40 37.6 40.3 37.3Q40.6 37 41.6 36.1Q42.7 35.3 43.2 34.6Q43.8 33.8 45 32.2L47.4 28.9L51.9 22.4Q54.3 18.8 54.9 17.5L55.6 15.7Q56 14.8 55.8 13.9Q55.6 12.9 52.9 13.1Q50.5 13.3 50.2 13.3Q50 13.4 41.9 14.9Q33.9 16.4 27.9 18.3L22.6 20Q20.4 20.8 19.8 20.7Q18.1 20.7 16.5 18.8Q14.9 16.9 14.5 15.8Q14.2 14.7 14.2 14.2Q14.2 12.8 15.1 12.5Q16.1 12.1 17.4 12L22.7 11.4Q26.1 11.1 38.1 9.5Q50 8 53.8 6.9Q57.6 5.8 58.7 5.7Q61.2 5.7 64.7 7.5Q68.1 9.3 69.2 10.7Q70.3 12.1 69.3 14.3Q68.6 15.7 67.2 17.2Q65.8 18.7 63.3 21.1Q60.7 23.6 57.6 27.4Q54.5 31.2 53.6 32.7L52.5 34.5Q51.8 35.4 52 35.8Q52.2 36.1 53.3 36L69.6 33.6Q72.7 33.2 74.4 33.6Q76.1 33.9 77.9 35.5Q79.7 37.2 80.4 38.5Q81.2 39.9 81.1 40.8Q81 41.5 80.4 42.6L79.2 44.6Q78.3 46 77.6 47.7Q77 49.4 75.2 54.5Q73.4 59.6 72.1 62.4Q70.9 65.1 68.8 69.3Q66.7 73.4 63.3 78Q60 82.6 53.8 86.1Q47.6 89.6 43.5 89.6Q41.7 89.6 40.9 89.1Q40 88.7 39.6 88.2Q39.2 87.7 37.2 84.8Q35.2 81.9 29.7 78.3L28.6 77.6Q28.2 77.3 28.3 77.1Q28.4 76.8 29 76.9Z","t":[[19.5,16.7],[57.9,9.3],[64,11.4],[44.2,39.5],[72.6,36.3],[76,38.8],[63.7,69.8],[46.5,86.7],[35.8,80.9]]}],"ㄌ":[{"o":"M43.1 35.4L21.8 38Q19.7 38.3 18.2 38.6Q16.7 38.9 16.3 38.9Q14.1 38.8 12.2 36.3Q10.3 33.8 10.5 32.4Q10.6 31.8 10.9 31.3Q11.2 30.9 13 28.9Q14.8 26.9 15.9 24.6Q17 22.3 17.8 20.3Q18.6 18.3 18.9 17.3Q19.2 16.3 19.5 14.7Q19.7 13.2 19.8 12.4Q19.8 11.6 19.9 10.1Q19.9 9.3 19.8 8.7Q19.7 8 19.8 7.2Q19.9 6.3 22 6.4Q25.3 6.6 27.3 8.5Q29.3 10.4 29.3 12.4Q29.3 13.3 28.7 14.7Q28.2 16.1 25.8 20.8L21.7 28.7L21 29.9Q20.9 30.3 21.3 30.6Q21.8 30.9 24.6 30.7L32 30Q39.1 29.4 45.6 28.2L54.3 27.5L63.3 26.6Q68.5 26.1 69.6 25.8Q70.7 25.6 72.8 25Q74.9 24.5 76 24.5Q77.7 24.5 79.9 25.5Q82.2 26.6 83.4 28Q84.7 29.5 85 30.4Q85.4 31.3 85.3 32.4Q85.3 32.9 84.8 35.6Q84.2 38.3 83.8 40.7L82.7 46.9Q81.4 54.3 79.9 59.6Q78.4 64.9 74.2 73.7Q70 82.5 63.7 87.1Q57.3 91.8 53.4 91.7Q51 91.6 50.4 90.7Q49.9 89.9 49.8 88.8Q49.6 87.8 49.4 87.3Q49.3 86.8 47.7 84.7Q46.1 82.5 43.7 80.3L42.5 79.2Q41.8 78.7 42 78.4Q42.2 78.2 42.7 78.3L44.2 78.9Q46 79.5 48.9 80.2Q51.7 80.8 53.3 80.9Q55.9 81 58.1 80Q60.4 79 62.6 76.7Q64.7 74.4 66.3 71.8Q67.8 69.2 69.3 65.5Q70.9 61.8 71.6 59.4Q72.4 57 73.3 53.1Q74.2 49.3 74.7 46.6Q75.3 44 75.5 42Q75.8 40 76 38.3Q76.1 36.7 76.1 35.6Q76.1 34.6 75.9 33.9Q75.6 33.1 74.7 32.6Q73.8 32.1 70.3 32.4L52.5 34.3L43.1 35.4Z","t":[[24,10.9],[14.9,34.9],[76.5,28.6],[80.7,31.9],[74.4,64.4],[61.2,85.6],[56,87.7],[47.7,81.9]]},{"o":"M45.6 28.2Q47.2 24.4 48.4 20.3Q49.6 16.3 50 14.1Q50.5 12 50.6 10.8Q50.7 9.7 50.8 8.9Q50.8 8.1 50.7 7Q50.5 5.8 50.5 5.4Q50.5 5 50.7 4.6Q51 3.7 52.2 3.6Q54.2 3.6 56.5 4.8Q58.8 6 59.4 7Q60 8 60 9.2Q59.9 9.9 59.7 10.7Q59.4 11.4 59 12.8Q58.5 14.1 58.2 15.1L57.3 18.3L54.3 27.5L52.5 34.3Q49 42.8 47.4 46.3Q45.8 49.9 39.9 60.7Q33.9 71.4 25.3 77.8Q16.8 84.1 12.1 85.1L10.7 85.3Q10 85.5 9.8 85.2Q9.6 84.8 9.9 84.6L10.8 83.9Q13.3 82.1 16.1 79.4Q18.9 76.7 23.3 71Q27.6 65.3 31 60Q34.5 54.6 37.4 48.6Q40.4 42.6 41 40.9L43.1 35.4L45.6 28.2Z","t":[[55.1,8.8],[45.3,40.9],[31.6,67.4],[15.6,82.1]]}],"ㄍ":[{"o":"M18 63.6L14 57.3Q11.3 53.1 10.8 51.8Q10.3 50.4 10.3 49.3Q10.3 48.1 10.7 46.8Q11 45.9 11.8 44.3Q12.6 42.8 13.9 40.8L17.8 34.8Q18.9 33 20.8 29.6L23.5 24.6Q24.3 23.2 26.5 18.4Q28.6 13.7 29.2 11.8Q29.9 10 30.2 8.5Q30.6 7 30.7 6.2L31 4.5Q31.2 3.5 31.6 3.1Q32.1 2.6 33.1 2.6Q34.5 2.7 37 4.2Q39.4 5.8 40.8 8.2Q42.3 10.6 42.3 12.4Q42.2 13.9 41.7 14.5Q41.1 15.2 39.5 16.6Q38 18 36.8 19.5Q35.6 21.1 33.7 24.1Q31.8 27.1 29.9 29.7L23.9 38.1Q21.7 41.2 20.1 43.4Q18.4 45.7 17.8 47Q17.2 48.4 17.1 49.5Q17.1 50.6 17.6 51.6Q18 52.3 19.2 53.8L21.1 56L32.2 68Q39.3 75.8 40.4 77.3Q41.5 78.8 41.9 80.6Q42.2 82.3 42.3 84.2Q42.3 86 42 87.6Q41.6 89.1 40.7 90.9Q39.9 92.7 37.3 92.7Q34.1 92.8 32.8 90.8Q31.5 88.8 31.1 88Q30.7 87.3 29.2 84.2Q27.8 81.2 23.8 73.8Q19.8 66.5 18 63.6Z","t":[[36.3,8.8],[13,48.8],[37,85.3]]},{"o":"M58.7 61.1L54.9 55.3Q53.1 52.7 52.6 51.3Q52.1 49.9 52.1 49Q52 48 52.5 46.7Q53.1 44.6 54.4 42.6Q55.7 40.6 58.2 36.9Q60.7 33.2 62.7 29.9Q64.6 26.7 65.3 25.3Q66.1 24 68.3 19.3Q70.6 14.5 71.3 12.2Q72 10 72.3 8.8Q72.6 7.6 72.7 6.6Q72.8 5.7 73.1 4.6Q73.3 3.4 74.9 3.5Q76.6 3.6 78.9 5.1Q81.2 6.6 83 9.4Q84.9 12.3 84.9 13.7Q84.9 15.2 84.7 15.6Q84.5 16 83.9 16.3Q83.4 16.7 81.9 17.6Q80.5 18.6 79.2 20.1Q77.9 21.7 73.4 28L65.3 39.2L62.9 42.4Q60.4 45.7 59.7 47.1Q59.1 48.5 59.1 49.6Q59.1 50.4 59.5 51.3Q60 52.3 61.9 54.4L71.5 64.9Q71.5 64.9 74.5 68L77.2 70.8Q80.5 74.3 81.7 75.8Q82.9 77.3 83.6 78.9Q84.2 80.6 84.3 83Q84.3 85.3 84 86.9Q83.6 88.5 82.6 90.2Q81.7 91.8 79.5 91.9Q77.2 92 75.7 90.8Q74.3 89.6 72.8 86.7L69.3 79.6Q67.8 76.7 63.8 69.8Q59.8 62.8 58.7 61.1Z","t":[[78.8,9.3],[55.8,47.9],[79.1,85.1]]}],"ㄎ":[{"o":"M34.8 16.3L26 17.5Q22 18 19.2 18.8Q16.4 19.6 14.4 20.3Q12.4 21 12 21Q10.3 21 8.7 18.9Q7.1 16.8 7 16.4Q6.9 16 6.9 15.5Q6.9 14.2 8 13.5Q9.2 12.7 12.3 12.4L21.1 11.6Q22.3 11.5 33 10.3Q43.8 9.1 60.2 8.5L72.2 8.1Q75 8 76.4 7.7L78.8 7Q80.1 6.7 81.2 6.7Q83.2 6.7 85.7 8.4Q88.3 10 88.3 11.7Q88.4 13.4 88 14.2Q87 16 85.1 15.8L75.2 14.9Q71.5 14.6 68 14.5Q66.5 14.5 64.4 14.5Q62.3 14.6 55.2 14.8Q48.2 14.9 40 15.5L34.8 16.3Z","t":[[11.4,17],[44.9,12.8],[82.6,11.9]]},{"o":"M40 15.5Q42.2 18.1 43 19.5Q43.8 20.9 43.8 21.6Q43.9 22.4 43.7 22.8Q43.5 23.2 43.2 23.5L42.4 24.3Q40.7 26 38.4 30.1Q36.1 34.3 35.9 34.9L35 36.6Q34.6 37.5 34.6 38Q34.6 38.5 34.9 38.7Q35.3 39 37.4 38.7L45.3 37.5Q47.9 37.2 52.5 36.6Q57.2 36 59.3 35.5Q61.5 35 62.5 34.9Q64.3 34.9 67.5 36.1Q70.7 37.3 72.1 39Q73.4 40.6 74 42.3Q74.5 44 74.3 45.3Q74.2 45.9 74.1 46.2Q74 46.6 73.6 47.6Q73.3 48.6 73 49.4Q72.7 50.2 71.7 54.4L70.4 59.3Q69.7 62 69.2 63.5Q68.8 65 66.2 71.2Q63.7 77.4 58.2 83Q52.7 88.7 49 88.6Q48 88.6 47.3 88.2Q46.6 87.9 45.8 86.7L44.5 84.9Q42.9 82.9 39.8 80.3L37.9 78.7Q37.3 78.2 37.2 77.6Q37 77.1 38 77.3L40.2 78Q40.9 78.3 43.6 79.2Q46.2 80.1 47.4 80Q50.2 79.9 54 75.1Q57.7 70.3 59.5 66.4Q61.3 62.5 62.3 59.1Q63.3 55.8 63.8 53.6Q64.3 51.3 64.5 48.9Q64.8 46.5 64.8 45.4Q64.8 44.3 64.7 43.7Q64.4 42.7 63.5 42.1Q62.6 41.5 59.7 41.6Q56 41.8 54.3 42L48.3 42.7Q41.9 43.4 37.9 44.3Q33.8 45.1 31.3 45.7Q28.9 46.3 28.2 46.3Q25.9 46.4 24.6 44.3Q23.3 42.1 23.3 40.1Q23.3 39.3 23.5 38.7Q23.8 38.2 24.3 37.7L25.9 36.4Q26.8 35.7 28.5 33.4Q30.3 31.2 32.2 27.9Q34.1 24.6 34.5 23.2Q34.9 21.7 35.1 20.8Q35.2 20 35.2 19.4Q35.3 18.8 35.2 18.2Q35.1 17.3 34.8 16.3L40 15.5Z","t":[[38.8,20],[28.4,41.4],[64.4,38.6],[69.3,42.6],[64.2,67.2],[51.2,85.1],[41.9,80.5]]}],"ㄏ":[{"o":"M23.5 21.7Q23 20.8 22.9 20.5Q22.8 20.2 22.8 19.6Q22.8 19 23 18Q23.1 17.2 23.5 16.3Q23.9 15.5 25.8 15.5L34.1 15.9Q38 16 51.6 14.7L77.2 12.4Q81.1 12 83.4 12Q85.8 12 86.8 13.7Q87.8 15.3 87.8 16.6Q87.9 17.9 87.5 18.6Q87.1 19.3 86.6 19.7Q86 20 84.8 20L70.6 20.1Q56.7 20.3 48.5 21.1Q40.3 21.9 32.5 23Q25.7 24.7 23.5 21.7Z","t":[[27.2,20],[82.8,15.6]]},{"o":"M32.5 23Q32.1 29.5 31.8 33.9Q31.5 38.3 30.9 45.3Q30.2 52.2 27.9 61.4Q25.6 70.7 19.7 76.1Q13.9 81.4 9.5 82.8L8.4 83.2Q7.5 83.4 7.4 83Q7.2 82.7 7.7 82L8.9 80.7Q10 79.6 11.7 77.2Q13.5 74.7 15.8 71.1Q18.1 67.4 19.5 63.1Q20.9 58.8 21.6 56.2Q22.2 53.6 22.7 51.1Q23.1 48.6 23.5 43.7Q24 38.8 24 35.7L24.2 25.8Q24.2 25 24.1 23.8Q24 22.6 23.5 21.7L32.5 23Z","t":[[28.1,24.2],[24.9,58.1],[16.7,76.5],[10.5,81.4]]}],"ㄐ":[{"o":"M66.3 54L46.2 63.2Q37.1 67.3 34.5 68.2Q32 69 30.7 68.9Q28.7 68.9 25.8 67.1Q22.8 65.3 22.1 64Q21.3 62.7 21.1 61.7Q20.9 60.7 21 59.4Q21 58.7 21.1 56.3Q21.3 53.8 21.2 52.1L20.5 28.6Q20.4 25.4 20.4 24.5L20.2 21.3Q20 19.4 20 18.7Q19.9 18 19.5 16.1Q19.1 14.2 18.9 13.3Q18.8 12.4 18.8 11.3Q18.8 10.3 19 9.6Q19.8 7.3 22.7 7.3Q24.8 7.3 27.8 9.1Q30.8 10.9 30.7 13.7Q30.7 14.1 30.4 15.4Q30.2 16.6 30.1 17.5Q30.1 18.3 30.1 20.2L30 23L29.8 54.6Q29.7 56 30 57Q30.3 58.1 30.9 58.6Q31.5 59 33.1 59Q38.2 58.9 53.7 52.9L66.6 47.9C72.7 46.4 69.4 53.1 66.3 54Z","t":[[24.4,11.9],[24.4,60.2],[29.5,64.4],[66.7,51.2]]},{"o":"M66.6 47.9L66.4 32.9Q66.4 31.3 66.2 24.2Q66 17.2 65.9 15.4Q65.8 13.6 65.7 12.1Q65.5 10.7 65.3 8.8Q65.2 7 65.2 6.3Q65.3 3.1 68.3 3Q70.7 3 73 4.9Q75.3 6.8 75.8 7.6Q76.3 8.4 76.4 9.2Q76.5 10 76.3 11.2Q75.9 13.6 75.6 15.4Q75.4 17.3 75.3 18.6Q75.2 19.9 75.2 23.3L75.1 30.1L74.8 50.8Q74.7 53.8 74.9 61Q75 68.2 75.1 69.3L75.4 83Q75.4 85.4 75.1 87.4Q74.7 89.3 73.4 90.8Q72 92.3 70.8 92.3Q70 92.3 68 91.1Q66.1 89.9 65.8 87.5Q65.4 85 65.4 84.1L65.6 81.7L66 70.6Q66.1 68.1 66.2 61.2L66.3 54L66.6 47.9Z","t":[[70.5,8.1],[70.9,86.5]]}],"ㄑ":[{"o":"M31.7 37.3L48 21.1Q52.7 16.5 56.2 12.2Q59.7 8 60.8 6.2Q62 4.5 62.4 4.1Q62.9 3.8 63.7 3.7Q64.9 3.6 67.2 4.9Q69.5 6.2 70.9 8.4Q72.3 10.7 72.2 11.8Q72.1 12.9 71.5 13.7Q70.8 14.4 69.8 14.9L67.9 15.8Q64.2 17.7 56.6 24.4L42.7 36.5Q41.9 37.2 36.9 41.3Q31.9 45.3 31.1 46.9Q30.4 48.4 30.5 49Q30.5 50 31.5 51Q32.4 52 34.9 53.4L50.8 63.2Q55.3 66 62 70.8Q68.6 75.6 70.7 77.9Q72.8 80.2 73.5 81.7Q74.2 83.3 74.4 84.7Q74.7 86.2 74.6 87.2Q74.5 88.5 73.7 90Q72.9 91.4 70.7 91.6Q68.1 91.9 65.9 89.9Q63.8 87.9 59.2 82.9Q54.6 78 49 73.2Q43.4 68.3 37.7 63.7Q31.9 59 27.4 56.4Q22.9 53.9 22 53.1Q21 52.3 20.8 50.5Q20.7 48.8 20.7 48.2Q20.7 47.5 20.8 47.1Q21 46.7 21.3 46.5Q21.7 46.2 22.8 45.3Q24 44.4 27.2 41.5Q30.4 38.5 31.7 37.3Z","t":[[65.8,8.4],[24.2,49.8],[70.2,86.3]]}],"ㄒ":[{"o":"M43.8 16.9L34.2 17.6Q29.8 18 28.6 18.2Q27.4 18.3 22.4 19.3Q17.3 20.2 15.3 20.1Q9.3 19.9 7.7 17.2Q6.2 14.6 6.2 13.2Q6.3 12.2 6.8 11.8Q7.3 11.3 9.1 11.3L16.4 11.5Q18.3 11.6 24 11.3Q29.6 11 38.7 10.5L65.3 9.3Q70.3 9.1 72.5 9Q74.7 9 75.5 9Q76.3 9 77.6 8.8Q79 8.7 80.4 8.4Q81.8 8.1 82.2 8Q84.6 8 86.3 9.5Q88.1 11 88.6 12.4Q89 13.8 89 14.7Q88.9 17.1 86.3 17.1Q86 17.1 83.5 16.7Q81.1 16.3 74.3 16.3Q64.2 16.4 53.6 16.8L43.8 16.9Z","t":[[11.4,15.8],[83.3,11.9]]},{"o":"M53.6 16.8L53.2 33.4L52.6 63Q52.6 64.6 52.6 68.4Q52.7 72.2 52.8 75.6Q53 78.9 53 79.9Q52.9 81.5 52.7 83.5Q52.5 85.5 51.2 86.3Q50 87.2 49.1 87.3Q47.7 87.4 45.7 86.2Q43.7 84.9 43.3 83.3Q42.8 81.8 42.9 80.7Q42.9 79.9 43.1 77.6Q43.3 75.4 43.6 70.2Q43.9 64.9 44 62L44.3 48Q44.5 42.2 44.4 40.2Q44.4 38.2 44.3 31.9Q44.2 25.6 44.1 23.9Q44.1 22.1 43.8 16.9L53.6 16.8Z","t":[[48.1,18.8],[47.9,82.8]]}],"ㄓ":[{"o":"M41.4 58.3L30.9 59.8Q28.9 60 27.3 60.5L24.2 61.3Q22.9 61.5 21.5 61.5Q19.7 61.6 18.3 61Q16.9 60.4 15.9 58.7Q14.9 57 14.6 55.9Q14.3 54.8 14.1 53.4Q13.9 52 13.9 50.9L13.3 35.9Q13.2 34.1 13 31.4Q12.7 28.7 12.6 27.6Q12.5 26.6 12.2 24.9Q11.9 23.1 11.8 22.3Q11.8 21.4 12.2 20.5Q12.7 19.5 14.1 18.6Q15.6 17.7 17.4 17.8Q19 17.9 20 18.7Q21 19.6 21.2 20.1Q21.5 20.7 21.5 21.2Q21.5 21.8 21.2 23Q20.9 24 20.8 24.7Q20.7 25.4 20.7 26.7Q20.6 28 20.5 30.2Q20.4 32.3 20.5 33.4L20.6 40.9Q20.6 42.4 20.8 45.4Q21 48.4 21.5 50.9Q22 53.3 22.8 53.7Q23.6 54.2 24.4 54.2Q25.3 54.2 28.6 53.6L41.3 51.4L49.3 51L62.8 50.5Q66.8 50.4 67.5 49.9Q73.6 48.9 76.4 49.8Q76.1 51.8 75.5 53.7Q74.8 55.6 73.3 56.4Q71.7 57.2 69.2 57L61.7 56.7Q58 56.7 49.3 57.5L41.4 58.3Z","t":[[15.8,21.2],[18.1,54.7],[21.9,57.7],[72.3,52.6]]},{"o":"M67.5 49.9Q68.3 49.3 68.6 48.6Q68.8 48 69.2 46L70.4 38.2Q70.8 35.5 71.1 32.3Q71.4 29 71.5 27.5L71.7 24.5Q71.8 22 71.8 21.3Q71.8 20.7 71.9 20.4Q72.1 19.5 73.5 18.7Q75 17.9 76.2 18Q77.6 18.2 79 19.6Q80.3 20.9 80.7 21.7Q81.1 22.6 81.1 23.7Q81 24.2 80.8 25.1Q80.7 26 80.1 28.3Q79.6 30.7 79.1 33.3Q78.5 36 77.6 42.3L76.4 49.8Q76.1 51.8 75.5 53.7L67.5 49.9Z","t":[[76.5,21.4],[72.3,49.1]]},{"o":"M40.8 78.8Q41.1 73.4 41.2 70.3Q41.3 67.3 41.3 64.8L41.4 58.3L41.3 51.4L41.6 22.1Q41.6 19.6 41.5 17Q41.3 14.3 41.2 12.9Q41.1 11.5 40.8 10.5Q40.6 9.5 40.5 9.3Q40.5 9 40.4 8.5Q40.4 7.9 40.6 7.5Q40.9 6.7 42.2 6.3Q43.5 5.8 44.8 5.8Q47 5.8 49.8 7.7Q52.6 9.6 52.1 12.6L51.5 14.7Q51.3 15.4 51.2 16.9L50.7 20.1Q50.6 21.6 50.4 23Q50.3 24.3 50.1 28.5Q49.8 32.7 49.8 34L49.3 51L49.3 57.5Q49.2 66.3 49.2 68L49 78.3Q43.5 85.1 40.8 78.8Z","t":[[45.3,8.6],[44.7,78.1]]},{"o":"M49 78.3L67.1 77.6Q77 77.3 79.7 77Q82.3 76.7 82.7 76.6Q85.3 76.6 87.2 79Q89 81.3 87.9 83.4Q87 85.1 85 85.3Q84.4 85.3 81.8 84.9Q79.1 84.5 63 84.5Q48.7 84.5 37 85.9Q25.3 87.2 20.4 88.4Q15.5 89.6 13.9 89.6Q11.8 89.6 9.7 88.5Q7.6 87.3 7.3 86.6Q6.9 85.9 6.9 85Q6.9 84 7.4 83.1Q7.8 82.4 8.4 82.1Q9.1 81.7 14.2 81.5Q19.3 81.3 26.4 80.5L40.8 78.8L49 78.3Z","t":[[12.3,85.8],[46.3,82.1],[81.9,80.7]]}],"ㄔ":[{"o":"M28.5 38.5L26.9 38.9Q26.1 39.2 25.8 39.1Q25.5 39.1 25.4 38.8Q25.2 38.5 26.3 37.8L28.2 36.5Q39.1 29.3 44.9 22.3Q50.7 15.3 52 13.2Q53.3 11.2 54.4 9.3Q55.5 7.3 56.1 6.1Q56.6 4.8 57 4Q57.5 3.3 58.8 3.2Q60.3 3.2 62.5 4.5Q64.8 5.8 65.5 7.7Q66.3 9.6 66.3 10.7Q66.2 11.6 66 12.1Q65.7 12.6 65.1 13L64 13.7Q63.5 14 62.9 14.5Q62.4 14.9 61.6 15.6Q60.9 16.2 55.9 21Q50.9 25.7 46.1 29.2Q41.3 32.7 36.1 35.3Q30.9 37.9 28.5 38.5Z","t":[[60.9,7],[40.9,30.5],[30.2,36.7]]},{"o":"M50.6 51.4Q48.5 52.7 40 57.9Q31.5 63.1 23.3 65L21.9 65.3Q21.3 65.4 21.1 65.1Q21 64.8 21.6 64.4L23.4 63.3Q30.7 58.9 37.8 53.7Q44.9 48.5 48.6 44.9Q52.3 41.3 56.6 36.8Q60.9 32.3 62.2 30.3Q63.6 28.4 64.3 27.1Q65 25.9 65.5 25.5Q66 25 67.3 25Q68.9 25.1 71.5 26.8Q74 28.6 74 30.1Q74.1 31.6 73.8 32.3Q73.5 33 72.8 33.8Q72.1 34.6 70.2 36.2Q68.3 37.9 65.6 40L62.9 42.3L55.7 47.8L50.6 51.4Z","t":[[68.6,29.5],[36.7,58.1],[26,62.6]]},{"o":"M55.7 47.8Q57.7 49.7 58.4 51Q59.1 52.2 59.1 53.6L58.7 68.6Q58.7 71.3 58.7 73.5Q58.8 75.7 59 78.6Q59.2 81.4 59.4 83Q59.6 84.7 59.7 85Q59.7 85.4 59.7 85.8Q59.6 86.8 59.2 87.6Q58.8 88.4 57.4 90.3Q56 92.1 54.6 92Q53.4 92 52.2 90.6Q50.9 89.1 50.6 87.8Q50.4 86.5 50.4 85.7Q50.4 84.9 50.6 81.6L51.1 72.6Q51.3 68.5 51.3 65.6Q51.3 62.7 51.3 59.3Q51.2 56.9 51.1 54.9Q51 52.9 50.8 52.1L50.6 51.4L55.7 47.8Z","t":[[54.7,52.1],[54.4,88.6]]}],"ㄕ":[{"o":"M72.7 31.1Q73.6 29.4 73.9 27.3L75 19.1Q75.3 17.2 75.2 16.6Q75.2 16 74.8 15.7Q74.4 15.4 73.1 15.4L58.2 16.3L47.5 17.1L36 18.1Q35.4 18.1 33.1 18.5Q30.7 18.8 30.3 18.7Q28.8 18.6 27.5 17Q26.2 15.5 25.6 14.4Q25 13.3 24.8 12.7Q24.6 12 24.6 10.6Q24.6 9.2 27.9 9.2L33.6 9.3Q35.9 9.3 45.9 8.8Q55.8 8.2 61.3 7.6Q66.7 7 69.3 6.6Q71.9 6.2 73.2 5.9Q74.6 5.5 76 5Q77.5 4.5 78 4.4Q79.8 4.1 82.3 5.7Q84.8 7.3 85.2 9.1Q85.5 10.9 85.5 11.9Q85.5 12.9 85.3 13.7Q85 14.5 84.3 16.6Q83.6 18.7 83.2 20.3Q82.8 21.8 82.4 24L80.9 31.1Q80.5 32.7 80.5 33.2Q76.6 37.3 72.7 31.1Z","t":[[29.1,14.2],[80.5,10],[76.5,31.6]]},{"o":"M31 37.4Q32 37.3 36.9 36.9Q41.8 36.6 43.3 36.4L66.8 34.2Q69.5 34 70.7 33.4Q71.9 32.8 72.7 31.1L80.5 33.2Q80.6 33.6 80.8 34.5Q81.1 35.3 81.2 35.7Q81.3 36.1 81.3 36.8Q81.3 37.8 80.9 38.7Q80.5 39.6 79.5 40.7Q78.4 41.7 73.6 41.9L67.1 42.2Q52.7 43 34.9 45.7Q27.2 41.1 31 37.4Z","t":[[33.3,41.9],[76.7,35.6]]},{"o":"M34.9 45.7Q34 52.9 33.3 57.3Q32.6 61.7 31 66.6Q29.3 71.4 28.4 73.5Q27.4 75.5 26 77.9Q24.5 80.3 22.5 82.7Q20.5 85.1 17 87.4Q13.5 89.7 12 90.3L10.8 90.8Q10.2 91.1 9.7 90.9Q9.3 90.8 10.1 89.9L11.3 88.6Q12.5 87.3 14 85.2Q15.6 83.1 17.2 80.4Q18.8 77.8 22.3 69.6Q25.7 61.3 26.1 55.8Q26.5 50.2 26.5 48.5L26.4 45Q26.3 44 26.4 42.5Q26.5 41 26.8 39.8Q27.2 38.7 28.6 38.1Q30 37.5 31 37.4L34.9 45.7Z","t":[[30.7,41.2],[25.8,71.6],[13.7,88.4]]}],"ㄖ":[{"o":"M13.7 86.1Q13.4 85.4 13.4 84.3Q13.3 83.3 13.3 81.4L13.2 35.1Q13.1 30 13 26.3Q12.8 22.5 12 20.1Q11.3 17.8 11.1 17.2Q11 16.6 11 15.3Q11 14.3 11.2 13.6Q11.3 12.9 11.9 11.6Q12.5 10.2 13.4 9.8Q14.4 9.3 15.2 9.2L18.3 9.1L21.8 8.7Q26.2 9.6 23.1 17.4Q22.5 17.6 22.2 18Q22 18.4 21.9 19Q21.8 19.7 21.8 20.8L21.4 40.4Q21.3 44.6 21.4 53.3Q21.4 62.1 21.5 65.3L21.7 76.3Q21.7 77.9 22 79.2Q21.6 93.1 13.7 86.1Z","t":[[17.9,12.8],[17.7,83.3]]},{"o":"M21.8 8.7L37.2 7.5Q38.9 7.4 46.5 7Q54 6.5 59.7 5.7Q65.3 4.9 69 4.1Q72.6 3.4 73.4 3.3Q75.5 3.3 78.7 5.1Q81.9 6.8 83.1 10.4Q84.2 14 84.2 15Q84.1 15.7 83.9 16.5L83.4 17.5Q83.2 18.2 83 19.6Q82.7 21.1 82.6 22.3L81.7 32Q81.3 36.9 81.1 40.2Q81 43.6 80.9 48Q80.7 52.3 80.8 53.1Q80.8 53.9 80.9 58.5L81.3 79.4Q81.3 81 81 82.7Q80.8 84.3 80.4 85.1Q80 86 79 87.8Q77.9 89.6 76.8 90.8Q75.7 92 73.5 92Q72.8 92 72.4 91.7Q72 91.5 71.7 91.3L69.6 89.1Q63.2 82.2 69.4 79Q70.2 78.8 70.7 78Q71.3 77.3 71.4 76.3Q71.5 75.3 71.6 74Q71.7 72.8 71.8 72L72.7 21.6Q72.8 16.8 72.2 15.7Q71.6 14.5 70.4 13.9Q69.3 13.2 65.6 13.3L56.5 13.6Q47.3 13.9 35.5 15.6Q23.7 17.2 23.1 17.4Q22.5 17.6 22.2 18L21.8 8.7Z","t":[[23.5,12.1],[76.7,8.1],[75.6,84.7],[70.5,84.7]]},{"o":"M34.2 36.2L32.1 33.1Q31.8 32.7 31.9 32.3Q31.9 31.9 32.9 32.1L34 32.5Q34.5 32.7 36.4 33.8Q38.4 34.9 39.2 35.3Q40 35.8 44.5 39.1Q49.1 42.4 52.5 45.9Q56 49.4 56.6 50.8Q57.1 52.2 57.1 53.3Q57.2 54.3 56.7 55.8Q55.3 60.5 52.4 60.5Q50.2 60.6 49.1 58.9Q47.9 57.3 46.3 54.5Q44.8 51.7 42.3 48Q39.8 44.2 37.3 40.7Q34.9 37.3 34.2 36.2Z","t":[[36.3,35.8],[52.8,53.7]]},{"o":"M69.6 89.1Q68.5 88.1 65.8 88.2L53 88.5Q48.7 88.7 44.2 88.9Q39.8 89.2 32.9 90Q26 90.9 24.2 91.2Q22.5 91.5 22.1 91.5Q19.4 91.7 16.7 89.3Q14 86.8 13.7 86.1Q13.4 85.4 13.4 84.3Q13.3 83.3 13.3 81.4L22 79.2Q22.3 80.5 23.4 81.1Q24.5 81.6 26 81.6L30.2 81.3L66.7 79.4Q68.6 79.3 69.4 79L69.6 89.1Z","t":[[18.6,87],[65.8,84]]}],"ㄗ":[{"o":"M32.3 16.1Q32.1 15.9 31.5 16L29.2 16.1Q28 16.2 26.2 16.5Q24.3 16.8 20.1 17.5Q16 18.2 14.3 18.1Q12.3 18.1 11.3 17.6Q10.4 17 9.3 15.5Q8.3 14 8.3 12.3Q8.3 11.6 8.8 10.7Q9.3 9.7 13.2 9.5L20.6 9.2Q24 9.1 33.5 8.2Q43.1 7.3 55.1 6.5L63.6 6Q66.7 5.8 68 5.5Q69.3 5.3 71 4.9Q72.6 4.5 74.1 4.5Q76.6 4.6 78.1 5.2Q79.7 5.8 83.5 8.3Q87.3 10.7 86.9 15.1Q86.7 16 86.3 17.3L85.1 19.8Q84.5 21 84 22.4Q83.5 23.8 81.9 29.2Q80.3 34.6 77.3 43.6Q74.3 52.6 70 55.8Q65.8 59.1 63.7 60Q61.6 60.9 59.9 60.9Q59.2 60.9 58.6 60.6Q58 60.3 56.6 58Q55.2 55.8 51.1 51.3L49.4 49.4Q49 49.1 49.1 48.6Q49.2 48 50 48.4L52.7 49.7Q55.2 50.9 58 50.9Q62 51 63.8 49.5Q65.6 48 66.8 45.9Q68 43.8 70 38.3Q72.1 32.8 73.5 27.7Q74.8 22.6 75.1 20.3Q75.3 18 75.3 16.9Q75.3 15.5 74.9 14.9Q74.6 14.3 73.6 13.7Q72.6 13 63.8 13.2Q50.7 13.5 42.3 14.6L32.3 16.1Z","t":[[14.9,14],[77.9,9.3],[79.5,13],[70.7,49.8],[62.1,57.4],[54.4,52.1]]},{"o":"M42.3 14.6L41.9 39.3Q41.7 46.5 41.7 49.1Q41.7 51.8 41.9 61.3L42.1 79.7Q42.1 81.3 42.1 83.3Q42 85.3 41.3 86.8Q40.5 88.4 39.5 89.6Q38.5 90.8 37.2 90.8Q36 90.8 34.5 89Q33 87.3 32.6 84.8Q32.2 82.3 32.2 81.5Q32.1 80.7 32.3 78.7Q32.4 78 32.5 74.9Q32.7 71.7 32.7 70.9L32.8 65.5L33 53.7Q33 51.5 33 43.4Q33.1 35.2 33 32.9L32.9 29.3L32.8 22.6L32.6 17.4Q32.6 16.3 32.3 16.1L42.3 14.6Z","t":[[36.7,20.2],[37.2,86.3]]}],"ㄘ":[{"o":"M43.5 26.1L61.3 24.6Q68.4 24 73.7 23.3Q79 22.7 79.9 22.6Q82.1 22.6 85.1 23.6Q88 24.7 88.5 25.5Q88.9 26.3 89 27Q89 27.6 88.6 28.4Q87.5 30.4 85.2 30.7Q84.6 30.7 82.5 30.5Q80.5 30.3 76 30.5L66.4 30.8Q55.1 31.3 42.6 32.5L35.1 33.2L22.5 35.5Q20.5 35.9 18.6 36.4Q16.7 36.8 15.5 37.2Q14.4 37.5 13.3 37.5Q10.7 37.5 8.4 36.1Q6.1 34.7 6.2 32.1Q6.3 30.2 8.4 29.7Q10.5 29.2 11.8 29.1Q13.2 29 16.7 28.9Q20.3 28.7 25.3 28L36.5 26.7L43.5 26.1Z","t":[[11.9,33.5],[82.1,26.3]]},{"o":"M36.5 26.7L37.6 18.9Q37.9 16.7 38 15.3Q38 14 38.2 11.2Q38.3 8.4 38.3 6.9Q38.4 5.4 38.6 4Q38.8 2.6 41.6 2.5Q43.5 2.5 45.4 3.6Q47.3 4.7 47.7 6Q48 7.4 48.1 8.2Q48.1 9.1 47.8 10Q47.7 10.2 46.9 11.9Q46.1 13.5 45.8 14.8Q45.5 16.1 44.9 19.1L43.5 26.1L42.6 32.5L39.7 46.7Q39.5 47.8 39.5 49Q39.4 50.1 39.6 50.7Q39.8 51.5 40.3 51.9Q40.8 52.3 41.5 52.3Q42.2 52.2 44.4 51.9L54.9 50.3Q66.2 48.6 68.1 48.6Q71.1 48.7 73.7 50.9Q76.3 53.2 77 54.2Q77.7 55.3 77.7 56.1Q77.7 56.9 76.8 58.8Q76.4 59.6 75 62.8Q73.5 66 71.3 69.7Q69.1 73.3 65 78.3Q60.9 83.4 56.4 87Q51.9 90.6 45.6 92.4L44 92.8Q43.4 93 43.3 92.8Q43.1 92.7 43.1 92.3Q43.1 92 43.4 91.5Q44 90.6 45.4 89.4L48.1 87.3Q54.8 81.9 59.4 75.1Q64 68.4 65.7 64.9Q67.5 61.3 68 59.5Q68.6 57.7 68.6 56.8Q68.5 55 66.7 55.2L44.7 58Q41.3 58.5 38.2 59.4Q35.2 60.3 34.7 60.3Q33.9 60.4 32.5 59.5Q31.1 58.7 30.6 57.2Q30.1 55.7 30.1 55Q30 54.4 30.2 53.9Q30.3 53.6 30.9 52.6Q31.5 51.6 31.8 50.7Q32 49.9 32.9 44.9L35.1 33.2L36.5 26.7Z","t":[[43,7.7],[34.7,56.3],[68.1,52.1],[73.5,54.2],[64.7,74.9],[48.6,90]]}],"ㄙ":[{"o":"M77.9 76.5L57.7 79.2L39.1 82.2Q29.6 83.8 27.3 84.3Q24.9 84.8 20 86.4Q15 88 13.1 88Q11.2 88 9.8 87.2Q8.5 86.4 6.3 84.1Q4 81.7 4 79.4Q4 78.3 4.6 77.6Q5.1 76.8 7.9 73.8Q10.7 70.8 17.2 60.4Q23.7 50.1 27.6 43.2Q31.4 36.3 34.8 29Q38.2 21.6 39.8 17.8Q41.3 13.9 42.2 11Q43 8.1 43.3 7.2Q43.7 6.3 44.5 5.6Q45.3 4.8 47.3 4.9Q48.7 4.9 50.2 5.6Q51.7 6.3 54 8.4Q56.2 10.6 56.8 11.9Q57.5 13.2 57.5 14.2Q57.5 15.2 56.7 16.7Q56.3 17.4 55.3 18.9Q54.3 20.4 52.3 23.3Q50.3 26.2 49.6 27.2Q48.9 28.2 43.3 37Q37.7 45.9 37.3 46.5L26.1 65.1Q24.1 68.4 23.2 70.1Q22.3 71.9 21.8 73.2Q21.2 74.5 21.6 75Q21.9 75.6 22.6 75.7Q23.3 75.7 26 75.4L76.3 70.3C85.2 68.6 84.1 74.4 77.9 76.5Z","t":[[50,11.2],[12.3,79.8],[14.2,83.3],[78.4,73.3]]},{"o":"M76.3 70.3L72.1 57.8Q71.5 56.1 71.5 55.6Q71.4 55.1 72 54.7Q72.5 54.3 73.7 55.3L76.7 57.7Q79.7 60.2 81.3 61.5Q82.8 62.9 85.4 65.9Q88.1 68.9 89.6 71.9Q91 74.8 91.2 78.5Q91.3 82.2 90.7 85.3Q89.7 90.4 87.2 90.4Q85.5 90.5 84 89.1Q82.6 87.8 80.7 83.1L77.9 76.5L76.3 70.3Z","t":[[75.1,58.8],[87.2,85.8]]}],"ㄚ":[{"o":"M43.6 46.7Q43 45.5 41.3 43.7Q39.7 42 36.1 38.1Q32.6 34.3 30.4 32L22.3 23.9L17.3 18.5Q14 15.2 13.1 14.1Q12.2 13 12.1 11.8Q12.1 10.6 12.7 9.5Q13.4 8.3 15 7.4Q16.7 6.6 18.2 6.6Q20.6 6.6 22.4 8.4Q24.2 10.2 27.6 14.7L34.5 24Q40 31.4 48.6 40.3Q52.3 49.5 43.6 46.7Z","t":[[17.2,10.7],[45.8,43.3]]},{"o":"M48.6 40.3Q53.7 34.5 57.3 29.5L63 21.7Q64 20.3 65.8 17.4Q67.5 14.6 68.4 12.8Q69.4 11 70.2 8.6Q71 6.2 71.9 4.7Q72.9 3.2 75.6 3.3Q77.1 3.3 79 4.3Q80.8 5.2 82 7.3Q83.2 9.3 83.1 10.7Q83 11.8 82.5 12.6Q82 13.4 80.9 14.5Q79.8 15.5 77.1 18.4Q74.3 21.3 73.3 22.5L66.3 31L60.9 37.3Q59.2 39.4 57.3 42.3Q55.4 45.3 54.7 47.2Q42.2 51 48.6 40.3Z","t":[[77,8.1],[50,44.2]]},{"o":"M54.7 47.2Q54 49.2 54 53.4L54.3 74.4Q54.3 78.8 54.5 81.5Q54.7 84.2 54.7 85Q54.6 86.4 54.2 87.5Q53.8 88.6 52.8 90.3Q51.8 92 50.4 92Q48.8 92 47 89.8Q45.1 87.7 44.5 85.7Q43.9 83.8 44 80.3L44.2 73.4L44.6 54.3Q44.7 51.6 44.5 49.8Q44.3 48 43.6 46.7Q49.3 36.7 54.7 47.2Z","t":[[49.3,44.4],[50,88.4]]}],"ㄛ":[{"o":"M47.5 17L26.3 19.8Q22.6 20.3 18.9 20.9Q15.1 21.6 13.9 21.6Q11.4 21.6 9.1 20.3Q6.8 19.1 6 17.6Q5.3 16.1 5.3 15.3Q5.3 14.8 5.7 14.1Q6 13.3 9.7 13.1L15.8 12.9L25.7 12L38.7 10.9L60.3 8.9L72.5 7.9Q76.7 7.5 79.9 6.9Q83.1 6.3 83.7 6.3Q85.9 6.3 87.5 8Q89.2 9.8 89.6 11Q90.1 12.1 90 12.9Q89.9 13.9 89.3 14.3Q88.7 14.7 87.3 14.7L74.6 15Q66.9 15.2 57.3 16.1L47.5 17Z","t":[[11.9,17.4],[84.4,10.2]]},{"o":"M57.3 16.1L56.9 32.5L56.6 39.9Q56.6 41.6 56.3 42.4Q56 43.3 55.1 43.9Q54.2 44.5 49.7 44.7L43.8 45Q38.6 45.3 34.4 46.7Q30.3 48.2 28.5 51.4Q26.7 54.6 26.1 56.6Q25.5 58.6 25.5 61.4Q25.5 64.3 27.1 67.7Q29.7 73.6 36.1 77.2Q42.5 80.9 50.7 80.8Q57.3 80.8 62.3 78.9Q67.2 76.9 69.7 75.1Q72.2 73.3 73.5 72.2L77.7 68.3Q79.7 66.6 81.7 66.6Q83.1 66.6 84.6 67.5Q86 68.3 86.1 70.3Q86.1 72.2 85.1 74Q84.3 75.4 81.3 78.5Q78.4 81.5 70.2 85.3Q62 89 50.9 89Q34.6 89.1 26.7 81.8Q18.9 74.6 17.5 69.5Q16.1 64.4 16 61Q16 57.5 16.8 54.3Q18.6 47 24.6 43Q30.6 38.9 39.5 37.7L43.6 37.1Q45.4 36.9 46.3 36.2Q47.2 35.4 47.5 32.3Q47.8 29.2 47.8 27.4L47.5 17L57.3 16.1Z","t":[[52.3,20.7],[51.9,39.8],[36.3,42.1],[23.7,51.4],[21.2,64.4],[30.5,80],[49.8,85.8],[67.2,82.3],[80,73.5]]}],"ㄜ":[{"o":"M53.9 23.2L74.3 21.3L82.3 20.7Q85.6 20.5 86.6 21.1Q87.5 21.7 88.1 22.6Q88.7 23.5 88.7 25Q88.7 26.4 87.8 27Q87 27.6 85.3 27.7L74.3 28.5Q73.7 28.5 61.9 29.5L54.1 30.1L46.2 31L31.3 32.7Q26.3 33.3 20 34.6Q13.6 36 12.9 35.9Q10.4 35.9 8.4 33.9Q6.5 31.9 6.5 30.7Q6.5 29.6 6.8 29.2Q7.5 28 12 27.6L20 26.7L46 23.7L53.9 23.2Z","t":[[12.6,31.4],[82.8,23.7]]},{"o":"M46 23.7L46 17.6Q46 16.8 45.8 14.1Q45.7 11.4 45.6 10.3Q45.4 9.2 45.1 7.9Q44.7 6.6 44.8 6Q45 4 48.4 4Q50.8 4 52.1 4.8Q53.4 5.6 53.9 6.4Q54.4 7.2 54.4 8.3Q54.4 9.3 54.2 11.6Q53.9 13.9 53.9 15.8L53.9 23.2L54.1 30.1L53.6 47.9Q53.6 49.1 52.9 50.3Q52.2 51.5 46.4 51.9L42.2 52.1Q39.5 52.3 35.7 53.2Q31.8 54.1 29.3 58.5Q26.9 63 26.9 66.5Q26.9 70.1 29.1 73.9Q31.2 77.7 36.4 80.6Q41.5 83.5 49.9 83.4Q53.4 83.4 57.4 82.8Q61.3 82.2 65.2 80.7Q69 79.2 71.9 77.2L76.3 74Q79.7 71.7 81.4 72.8Q83 73.9 83.2 75.3Q83.3 76.7 82.6 78.4Q81.9 79.9 80.2 82Q78.6 84.2 70 87.7Q61.5 91.2 50.1 91.3Q32.6 91.5 25.1 83.2Q17.6 74.9 17.6 66.5Q17.6 62.2 19.2 58.7Q20.7 55.3 24.3 52Q27.9 48.7 31.7 47.8Q35.6 46.9 38.6 46.5L42.9 45.9Q44.2 45.8 44.9 44.9Q45.5 44 45.8 39.9L46.2 31L46 23.7Z","t":[[50,9.3],[50,46.7],[34.7,50],[24,58.1],[22.1,72.1],[29.8,83.5],[44,87.4],[65.8,85.3],[77.9,77.9]]}],"ㄝ":[{"o":"M30.5 39.7L61.2 36.5L68.8 36L77.9 35.5Q80.4 35.3 82.5 34.9Q84.7 34.5 85.4 34.5Q87.6 34.6 90.3 36.5Q93 38.4 93 41Q92.9 42 92.3 43.1Q91.6 44.2 88.8 44L82.3 43.3Q77.7 42.9 68.3 43.2L60.7 43.6Q42.5 45.5 30.6 47.2L22.8 48L15.1 49.3Q11.2 50 9.5 50.1Q7.8 50.2 6.1 49.3Q4.5 48.4 3.4 46.5Q2.3 44.7 2.3 43.8Q2.2 43 2.5 42.4Q3.1 41.1 5.3 41L10.7 41.2Q13.4 41.3 16.7 40.9L22.7 40.3L30.5 39.7Z","t":[[8.1,46.3],[86.3,38.1]]},{"o":"M61.2 36.5L60.9 24Q60.9 23.2 60.6 18.2Q60.2 13.2 59.9 11.4Q59.6 9.6 59.7 8.8Q59.8 5.5 62.8 5.3Q64 5.3 66 6.3Q68 7.3 69.3 9Q70.6 10.8 71 12.1Q71.3 13.3 71.3 14.9Q71.2 16.1 70.6 19.5Q70 22.9 69.6 27.5L68.8 36L68.3 43.2L67.2 56.8Q67.1 57.5 66.4 61.3Q65.7 65 65.2 66.3Q64.7 67.5 63.6 69.3Q62.4 71.1 61.5 71.1Q60.9 71.1 60.4 70.1Q59.9 69.2 60 66.4L60.5 50.6L60.7 43.6L61.2 36.5Z","t":[[65.6,10.9],[62.6,64.2]]},{"o":"M22.7 40.3L22 27.4Q21.8 25.5 21.4 22.7Q21.1 19.9 20.8 18.7Q20.6 17.5 20.1 15.8Q19.6 14.1 19.5 13.4Q19.4 12.7 19.9 11.3Q20.3 9.9 23 9.9Q28.6 10 29.9 12.3Q31.3 14.7 31.5 16.6L31.1 25.3L30.5 39.7L30.6 47.2L30.5 54Q30.5 55.3 30.8 59.7L31.1 64.4Q31.2 66.8 31.5 68.8Q31.7 70.8 32.4 74Q33.2 77.1 34.2 78.9Q35.3 80.6 37.2 81.7Q39.1 82.8 43.3 82.7L55.1 82.6Q56.1 82.6 61.3 82.4Q66.4 82.1 67.7 82Q68.9 81.9 70.9 81.5Q72.9 81.2 74.3 80.7Q75.7 80.2 76.1 80.1Q76.9 80 78.6 80.4Q80.3 80.8 81.6 82.4Q83 84.1 83 85.1Q82.9 86.4 81.1 87.8Q79.2 89.2 65.2 89.8Q51.2 90.3 42.9 90Q36.1 89.8 33.6 88.4Q31.1 87.1 29.3 84.7Q27.6 82.2 26.6 78.7Q25.5 75.1 25.2 73Q24.8 70.9 24.5 67.6Q24.1 64.2 24 63L22.8 48L22.7 40.3Z","t":[[25.1,14.9],[27.4,68.6],[32.3,83.7],[40.2,86.7],[77.4,84.7]]}],"ㄞ":[{"o":"M43.3 12.9L30.8 14.3Q21.1 15.4 18 16.2L15.3 16.9Q13.7 17.4 12.8 17.3Q11.5 17.3 10.7 16.9Q9.9 16.4 8.5 15.1Q7.1 13.9 6.8 13.2Q6.4 12.5 6.4 11.8Q6.4 11.2 6.9 10.3Q7.9 8.7 9.8 8.7Q10.2 8.7 11.8 8.7Q13.3 8.8 14.5 8.8L21.3 8.2L67.7 5.1Q69.9 4.9 73 4.6Q76.1 4.3 78.1 3.8Q80.2 3.4 80.7 3.3Q83.5 3.1 85.5 4.2Q87.5 5.4 88.1 6.4Q88.7 7.3 88.8 8.8Q88.8 10.2 88.2 11.1Q87.7 11.7 86.9 12Q86.2 12.2 84.6 12L76 11.5Q74.1 11.4 65.8 11.8L53.3 12.5L43.3 12.9Z","t":[[12.6,12.8],[83.3,7.4]]},{"o":"M50 38.2L64.4 36.5Q68.7 36 71.5 35.3Q74.3 34.6 75.1 34.5Q78.9 34.1 81.8 37.5Q84.7 40.8 84.7 43.1Q84.7 43.9 84.5 44.7L83.9 46.1Q83.3 47.6 83 50L82.2 55.1Q81.6 58.7 80.4 63Q79.2 67.2 76.8 72.7Q74.4 78.2 70.6 81.9Q66.8 85.5 64.4 87.4Q61.9 89.3 60.6 90.1L58.3 91.3Q56.8 92.1 56.4 92Q56 92 55.9 91.7Q55.8 91.4 56.5 90.7L57.4 89.4L59.9 86.8Q62.6 83.9 65.7 78.6Q68.8 73.3 70.4 67.8Q72 62.2 72.6 59.2Q73.1 56.2 73.4 53.3Q73.8 50.4 74 48.7Q74.2 46.9 74 46.1Q73.2 42.9 68.1 43.2L62 43.6L48 44.9L39.1 46L26.9 48.4Q23.7 49 22.6 49.3Q21.6 49.6 18.7 50.4Q15.8 51.3 14.1 51.9Q12.5 52.4 11.9 52.4Q11 52.4 9 50.5Q7 48.7 7.2 46.8Q7.2 46.1 7.7 45.1L8.7 43.5Q9.9 41.2 10.6 38.1Q11.3 35 11.6 33.8Q11.8 32.7 12.1 30.2Q12.4 27.8 12.6 26.4Q12.8 25.1 12.8 24.2Q12.9 23.4 13.2 22.8Q13.5 22.3 14.7 22.4Q16.1 22.6 18.4 23.9Q20.7 25.3 21.3 26.1Q22 26.9 22.1 27.7Q22.1 28.5 21.4 29.8Q20.7 31.3 20.4 32Q20.1 32.7 19.9 34.3Q19.6 36 19.3 37.7Q19.1 39.4 19 40.8Q18.8 42.2 19 42.6Q19.3 43.1 19.7 43.2Q20 43.3 21.9 42.8L25.9 41.9Q27.6 41.5 41.1 39.3L50 38.2Z","t":[[16.3,27],[12.1,47.7],[75.3,38.8],[78.6,43],[74.7,69.5],[62.8,86.7]]},{"o":"M53.3 12.5Q52.9 16.7 52.7 19.5Q52.4 22.3 51.8 27.3Q51.3 32.2 50.8 34.3L50 38.2L48 44.9Q46.8 48.8 45.8 51.6Q44.7 54.3 40.7 62.1Q36.7 70 28.5 77.6Q20.4 85.2 13.9 88.1L10.9 89.4Q10.2 89.8 9.8 89.4Q9.5 89 10.3 88.3L12 86.8Q17.3 82.2 23.3 74.7Q29.2 67.2 32.6 60.6Q36 53.9 37 51.3L39.1 46L41.1 39.3Q42.3 33 42.6 31.4Q42.8 29.8 43.1 26.5Q43.3 23.3 43.5 21.3Q43.6 19.3 43.6 17.5Q43.6 15.6 43.5 14.7L43.3 12.9L53.3 12.5Z","t":[[47.9,16],[42.1,51.4],[25.1,78.4],[16.3,85.1]]}],"ㄟ":[{"o":"M31.5 25.6L29.6 19.7Q28.8 17.5 28.4 17.2Q28 16.9 27.1 16.8Q25.8 16.7 22.9 17.4Q20 18.1 18.9 18.6Q17.8 19 14.8 20.6Q11.9 22.2 10.6 22.2Q8.2 22.1 6.8 19.9Q5.4 17.6 5.1 16.5Q4.9 15.4 4.9 14.1Q4.9 13.6 5 13.3Q5.2 13.1 5.7 13Q6.2 12.9 7.4 12.9Q8.6 12.8 12.1 12.5Q15.6 12.2 20.8 10.7Q26 9.1 28.3 8Q30.6 7 31.5 6.9Q33.6 6.7 34.7 8.2Q35.7 9.7 36.8 15.2Q38 20.7 40.8 27.6Q43.6 34.5 48.4 42.3Q53.2 50.1 57.6 56.2Q62 62.3 67 66.8Q72.1 71.3 75.6 74.1Q79.1 76.8 81.3 78.3L86.9 82L89.7 84.1Q90.4 84.7 90.3 85.3Q90.2 86 89 86.1L85.9 86.5L82.3 86.9L79.8 87.2Q78.4 87.3 76.2 87.9Q74 88.5 73.4 88.4Q71.9 88.4 70.1 87.1Q68.3 85.8 67.3 84.7L62 78.8Q59.4 76.2 55.6 71Q51.7 65.8 48 60.2Q44.4 54.6 42.4 50.8Q40.3 47.1 37 39.7Q33.7 32.4 31.5 25.6Z","t":[[9.1,17.7],[30.9,12.1],[38.1,34.7],[58.1,67.2],[75.6,82.8],[95.6,86.7]]}],"ㄠ":[{"o":"M37 56.7L18 46.5L15.5 45.4Q13.8 44.5 13.3 43.1Q12.8 41.7 12.8 41Q12.9 39.9 13.7 38.8Q14.6 37.8 17.7 35.3Q20.7 32.9 24.6 29Q28.4 25.2 32.6 20.5Q36.7 15.9 39.9 11.5Q43.1 7.1 43.8 6Q44.5 4.8 45.5 3.8Q46.5 2.7 48.7 4Q50.8 5.3 51.9 7.4Q53 9.6 53 10.7Q53 11.9 52.6 12.7Q52.1 13.5 50.2 15.1L47.9 17.1L42.7 21.4L27.5 35.8Q26.2 37 25.4 38.1Q24.6 39.1 24.6 39.9Q24.6 40.7 25.5 41.5Q26.4 42.4 30.6 44.4L42.9 50.6C50.3 54.2 40.4 58.4 37 56.7Z","t":[[47.9,9.5],[17.4,41.4],[41.2,53.5]]},{"o":"M42.9 50.6L51.6 42.2Q53.4 40.5 59.7 33.3Q66 26.1 67 24.4Q68 22.7 68.4 22.3Q68.8 21.8 69.5 21.6Q71.2 21.3 73.7 23.6Q76.3 25.9 76.4 28.2Q76.6 30.5 76.1 31.5Q75.4 32.9 73.5 34.4L69.9 37Q68.4 38.1 66 40.2Q63.7 42.2 58.8 46.7Q54 51.3 45.3 59.2Q36.7 67.1 32.1 72L28.1 76.2Q26.3 78.1 26.6 78.8Q26.8 79.4 29.1 79.1L36.7 78.2L69.4 74.1Q80.2 72.6 71.4 80.4Q55.5 82.8 40.8 85.7L34.4 87Q30.5 87.8 27.3 88.6Q24 89.3 21.5 90.3Q19 91.3 18.2 91.3Q17.5 91.4 16.9 91.1Q16.2 90.7 14.3 88.4Q12.4 86.1 11.9 85.1Q11.4 84.2 11.4 83Q11.3 81.8 11.4 81.6Q11.5 81.3 12.2 80.7L21.4 72.3L37 56.7L42.9 50.6Z","t":[[71.2,27.9],[16.5,83],[19.5,86.3],[71.6,77]]},{"o":"M69.4 74.1L66 62.1Q65.6 61 66 60.7Q66.3 60.3 67.1 61L70 63.7Q73.4 66.9 77.1 71.6Q80.8 76.3 82.3 79.9Q83.9 83.4 83.9 85.1Q83.9 86.5 83.3 87.7Q82.7 88.9 81.3 90.4Q79.9 92 78.5 91.9Q76.4 91.9 75 89.4Q73.5 87 72.8 84.7L71.4 80.4L69.4 74.1Z","t":[[68.1,64.4],[79.5,87.4]]}],"ㄡ":[{"o":"M49 46.8L54.1 40Q55.4 38.3 57.6 34.7Q59.8 31.2 60.4 30Q61.1 28.9 62.5 26Q63.9 23.2 64.4 22L65.9 17.9Q66.6 15.8 66.6 14.7Q66.6 13.6 66.2 13.2Q65.7 12.7 63.4 12.9L39.9 14.5Q37.5 14.7 33.6 15.2Q29.6 15.8 26 16.6Q22.3 17.3 21.3 17.7Q20.3 18 20 18Q19 18 17.4 17.1Q15.9 16.2 14.8 15.2Q13.7 14.1 12.9 13.1Q12 12.2 11.9 11.4Q11.8 10.6 12.6 10Q13.3 9.5 16.9 9.3L24.9 9.1Q29.6 9 51.1 7.1L60 6.3Q65.4 5.8 68.2 4.9Q70.9 4 71.7 3.9Q74.6 3.8 78.1 7.5Q81.7 11.3 82.1 13.5Q82.4 15.7 81.9 17.1Q81.6 17.9 81.2 18.4L78.7 20.1Q77.9 20.7 77.2 21.7Q76.4 22.7 73.8 26.5Q71.2 30.3 65.9 37.7L55.8 51.9L51.2 57.7Q47.2 62.1 44.7 64.6Q42.1 67.1 37 71.3Q31.9 75.6 26.3 79Q20.6 82.3 15.6 84.2Q10.6 86.1 8.2 86.6L4.6 87.2Q3.5 87.4 3.3 87.1Q3 86.7 3.2 86.4Q3.3 86 4.1 85.6L7.4 83.8Q19.5 76.9 25.6 71.6Q31.7 66.2 35.7 62.2Q39.8 58.2 40.4 57.4L44.7 52.2L49 46.8Z","t":[[19.1,13.7],[73.5,7.9],[74.4,14.4],[48.6,56.3],[12.1,83.5]]},{"o":"M44.7 52.2L25.6 37.2Q23.2 35.3 22.2 34.6L18.8 32.2Q18 31.6 17.3 31.3Q16.7 30.9 16.6 30.5Q16.5 30.1 16.7 29.8Q17 29.5 17.9 29.6Q18.8 29.6 20 30L22.7 31Q28.6 33.2 49 46.8L55.8 51.9L68.8 61.2Q76.4 66.7 79.7 68.9Q83 71.1 85.1 72.8Q87.1 74.4 89 76.8Q90.8 79.2 91.4 82.8Q91.9 86.4 92 88.5Q92 90.6 91.3 91Q90.6 91.4 89.9 91.4Q87.2 91.5 83.1 87.6L75.7 80.7Q72.8 78.2 65.3 70.9Q57.7 63.5 51.2 57.7L44.7 52.2Z","t":[[21.6,32.1],[86.7,82.1]]}],"ㄢ":[{"o":"M60.4 29.5L57.9 32.6Q56.6 34.2 55.3 34.1Q55 34.1 54.8 34Q54.6 33.9 54.4 33.6Q54.3 33.3 54.5 32.4Q54.7 31.5 55.1 30.6L59.9 20.7Q61.2 17.8 62 15.3Q62.9 12.7 62.8 11.6Q62.7 10.6 60.7 10.6Q59.8 10.7 56.6 11L50.4 11.7L32.1 14.5Q24.4 15.7 22.1 16.1Q19.8 16.6 19.1 16.6Q17.2 16.6 13.6 14.5Q10 12.5 10.1 10.4Q10.1 9.8 10.5 9.3Q10.9 8.9 12 8.9L13.2 8.9L22 8.5Q24.1 8.4 32.7 7.7Q41.2 6.9 47.4 6L55.3 4.8Q59.8 4.2 62.8 3.3Q65.9 2.4 66.7 2.3Q68.7 2.3 72 4.3Q75.4 6.3 76.3 7.8Q77.2 9.3 77.2 10Q77.1 10.9 76 12Q75 13.2 72.9 15.3Q70.7 17.4 66.6 22.3Q62.4 27.1 60.4 29.5Z","t":[[18.1,12.6],[70,6.7],[57.4,31.2]]},{"o":"M58.8 86.1L55.9 89Q53.9 91.1 51.4 92.4Q48.9 93.8 48.3 93Q47.8 92.2 47.9 91.7Q47.9 91.2 48.2 90.7L49.2 89.4L53.8 83.3Q58.2 77.5 63.2 68.5Q68.1 59.5 69.6 57Q71.1 54.5 71.7 53Q72.4 51.6 72.7 50.5Q72.9 49.4 72.9 49Q72.9 48.4 72.5 47.6Q72 46.8 70.7 46.4Q69.4 46 68.1 46.1L59.3 46.8Q49.4 47.7 38.8 49.4Q28.1 51.1 25.3 51.7Q22.6 52.3 20.7 52.9Q18.7 53.4 18.4 53.4Q17.7 53.5 16.3 52.7Q14.8 52 14 50Q13.3 48.1 13.3 47.4Q13.4 47 13.6 46.6Q13.8 46.2 14.2 45.8L15.6 44.2Q18.4 40.7 20.5 31.9L23.4 20Q23.6 19.1 23.9 18.7Q24.3 18.2 25 18.1Q26.4 18 28.1 19.3Q29.8 20.6 30.3 21.4Q30.7 22.3 30.7 23Q30.7 23.8 29.9 25.8L25.6 37.3Q23.6 42.6 23.8 43.2Q24.1 44.3 25.1 44.4Q26.1 44.5 28.4 44.2L38.5 42.8L68 39.3Q73.8 38.6 74.7 38.7Q75.5 38.7 76.9 39.4Q78.3 40.1 80.3 41.7Q82.2 43.3 83.6 44.9Q85 46.4 85.1 47.6Q85.1 48.8 84.8 49.8Q84.4 50.8 83.3 52.9Q82.3 54.9 73.8 67.3Q65.3 79.7 58.8 86.1Z","t":[[26,22.3],[18.4,49.5],[70.5,42.6],[78.6,46.3],[54.9,87.7]]}],"ㄣ":[{"o":"M46.7 89.3L50.6 85.3Q56.4 79.6 59.5 75.4Q62.6 71.3 65.3 67.1Q68.1 62.9 69.1 61.1Q70.1 59.3 72 55.6Q74 51.9 74.7 50.1L75.8 47.1Q76.4 45.4 76.3 44.6Q76.3 43.7 75.8 43.3Q75.3 43 73.7 43L67 43.3Q56.4 43.9 43.5 45.3Q30.7 46.8 25.6 47.7Q20.5 48.7 17.7 49.5Q14.8 50.3 14 50.3Q11.5 50.4 8.5 47.5Q5.5 44.7 5.6 43Q5.6 42.7 5.8 42.2L6.5 40.7Q6.9 39.7 7.3 37Q7.8 34.3 8 32.9Q8.2 31.4 8.4 28.6Q8.7 25.8 8.8 23.5L9.1 14.7Q9.1 14.7 8.9 11.4Q8.7 8.1 8.7 7.2Q8.8 4 11.2 3.8Q13.3 3.6 15.6 5.1Q17.9 6.6 18.6 7.6Q19.2 8.7 19.2 9.6Q19.3 10.5 19 11.8Q18.2 15.8 18 17.3Q17.8 18.9 17.5 21.8Q17.3 24.7 17.2 26.5L16.5 37.6Q16.4 39.3 16.9 40Q17.4 40.7 21.3 40.2L28.4 39.4Q42 38 49.8 36.9L58.9 35.8Q70.5 34.3 75.3 33Q80 31.7 80.7 31.6Q83.1 31.6 86.3 35.1Q89.5 38.6 89.6 40.6Q89.7 42.6 89.4 43.2Q89.3 43.5 89.1 43.8L87.3 45.9Q86.7 46.6 86 47.8Q85.2 49 84.7 49.8Q84.2 50.7 80.9 56.8Q77.6 62.9 71.9 70.3Q66.3 77.8 63 80.7Q59.6 83.5 55.9 86.2Q52.2 88.9 49.3 90.2L46.9 91.3Q46.4 91.5 46 91.6Q45.6 91.6 45.5 91.5Q45.4 91.4 45.3 91.2Q45.3 91.1 45.2 90.9Q45.2 90.7 46.7 89.3Z","t":[[13.7,8.6],[10.9,45.3],[81.6,37.2],[83.5,42.3],[68.1,70],[51.6,87]]}],"ㄤ":[{"o":"M40.6 41.3L30.1 42.9L24.7 44Q20.2 45 19.1 45.3Q18 45.7 17.3 45.7Q14.9 45.7 13.5 43.3Q12 40.9 12.1 39.7Q12.2 38.2 13.2 37.9Q14.1 37.5 15.3 37.6L18.4 37.7Q19.4 37.7 22.7 37.3L41.4 35.2L49.5 34.1L59.1 33.2Q62.3 32.9 69.8 31.8Q77.2 30.7 78 30.7Q82.1 30.7 83.3 32.6Q84.5 34.5 84.5 35.4Q84.4 36.2 83.6 37.8Q82.8 39.3 80.6 39.2L76.1 38.9Q68 38.4 55.6 39.6L50.7 40.3L48.3 40.7L40.6 41.3Z","t":[[18.1,41.9],[79.1,33.7]]},{"o":"M41.4 35.2Q42.1 33 42.3 31.9Q42.6 30.7 43 28.1Q43.4 25.5 43.6 23.7Q43.7 21.9 43.9 18.5Q44.1 15.1 44.1 13.5Q44 12.5 43.9 10.4Q43.7 8.4 43.5 7.3Q43.3 6.2 43.3 5.6Q43.3 5 43.6 4.3Q44.2 3.4 45.8 3.3Q47.3 3.3 50.1 4.2Q52.8 5.1 53.4 6.2Q54 7.3 54.1 8Q54.1 8.7 53.9 10Q52.9 14.8 52.5 16.7Q52.2 18.7 51.7 21.6Q51.2 24.5 50.7 27.3L49.5 34.1L48.3 40.7Q46 47.7 44.5 51Q43 54.4 40.2 59.4Q37.4 64.4 35.4 67.3Q33.3 70.3 30 74.1Q26.7 77.9 22.3 82Q18 86.1 9.9 89.4L7 90.7Q6 91.1 5.6 90.9Q5.2 90.7 5.1 90.3Q5.1 90 5.8 89.3L7.9 87.6Q16 81.2 22.2 73.1Q28.4 65 30.2 62Q32 59.1 34.7 54.1Q37.4 49.1 37.9 47.9L40.6 41.3L41.4 35.2Z","t":[[47.7,7.7],[44,44.2],[26,75.3],[9.3,88.1]]},{"o":"M55.6 39.6Q58.4 43 58.7 44.2Q59 45.3 59 46.3Q59 47.2 58.7 49.2Q58.3 51.2 58 54L57.4 58.5Q57 62.1 56.8 65.6L56 77.8Q55.9 79.7 56.2 81.2Q56.5 82.6 57.8 83.6Q59.1 84.7 64.8 84.6L69.2 84.5Q71 84.5 74.2 84.2Q77.3 83.9 80.4 83.1Q83.5 82.4 84.7 82.3Q85.8 82.2 86.5 82.5Q87.2 82.7 88.6 84Q89.9 85.2 90 86.7Q90.1 88.1 88.8 89.3Q86.8 91 77.3 91.4Q67.8 91.9 63.7 91.9Q57.6 92 54.5 91Q51.3 90.1 49.5 87.2Q47.8 84.3 48 80.4L50.7 40.3L55.6 39.6Z","t":[[54,44],[51.4,83.3],[55.3,87.9],[84.9,86.5]]}],"ㄥ":[{"o":"M39.1 84.4L21.8 85.6Q20.1 85.8 18 86Q15.9 86.2 14.2 86.8Q12.4 87.3 11.9 87.3Q10.5 87.5 9.4 87Q8.3 86.4 6.9 85Q5.4 83.6 4.9 82.7Q4.3 81.9 4.3 80.7Q4.3 79.4 5.6 77.8L7.5 75.6Q9.4 73.2 12.4 68.1L16.2 61.5L23.5 48.4Q25.6 44.7 29.5 37.2Q33.3 29.7 34.9 26.3L39.5 16L41.3 12Q42.9 8.7 43.9 8.3Q44.8 8 45.5 8Q47.4 8.2 49.4 10Q51.3 11.9 52.1 13.5Q52.9 15.1 52.9 16.4Q52.8 17.9 52.4 18.7Q52 19.6 48.7 25L19.6 71.8L17.2 75.6Q16.1 78 19.3 77.9L38.7 77.3Q43 77.3 51.3 76.6Q59.6 75.9 65 75.3Q70.3 74.7 74.4 73.7Q78.4 72.7 79.7 72.6Q83.7 72.3 87.3 75.1Q90.9 77.9 90.9 80Q90.8 80.9 90.1 82Q89.4 83.1 87 83.1L73.7 82.8Q70.8 82.8 64.3 83.2Q57.7 83.6 50 83.9Q42.2 84.2 39.1 84.4Z","t":[[46.8,14.1],[9.1,82],[10.8,83.4],[82.3,78.1]]}],"ㄦ":[{"o":"M5.1 87.8L8.5 83.7Q10.4 81.4 13.1 77.3Q15.8 73.3 17.7 69.6Q19.5 65.9 21.2 61Q22.8 56 23.5 52.1Q24.2 48.2 24.5 45.3Q24.8 42.4 25.1 38.2Q25.3 34 25.5 29.4Q25.7 24.7 25.7 21.3Q25.6 18.3 25.4 17.2Q25.2 16.1 24.8 14.6Q24.5 13.1 23.9 11.7Q23.3 10.4 23.3 9.4Q23.3 8.3 25.5 8.3Q27.3 8.4 31.2 9.2Q35.2 10 36 11.6Q36.9 13.2 37 14.2Q37 15.2 36.6 19.8L36 26.3Q35.8 27.9 35.3 32.2Q34.7 36.6 34.1 42Q33.4 47.5 32.9 50.7Q32.3 54 31.2 58.2Q30.1 62.4 28.9 65.2Q27.8 67.9 25.7 71.6Q23.5 75.3 20 79.2Q16.4 83.2 8 88L5.9 89.3Q5.1 89.7 4.7 89.5Q4.4 89.3 4.4 88.9Q4.4 88.6 5.1 87.8Z","t":[[30.4,13],[31,34.1],[25.7,63.7],[8.8,86.2]]},{"o":"M61.7 28.8L60 69.3Q59.9 71.8 60.2 73.8Q60.6 75.9 61.3 76.9Q62 78 63.7 78.5Q65.5 79 69.1 78.8L74.1 78.5Q75.3 78.5 78.5 78Q81.6 77.5 83.2 77.1Q84.7 76.8 85.5 76.8Q88.1 77 89.6 79.4Q91 81.8 90.8 83.2Q90.6 84.7 88.8 86.2Q87 87.8 75.6 88.2L67.8 88.6Q65 88.7 61.5 88.2Q58.1 87.7 56.1 86.6Q54.1 85.4 53 83.4Q51.9 81.4 51.4 78.7Q50.9 76 51 73.6L52.2 20.6Q52.2 18.6 52.1 15.6Q52 12.6 51.9 11.7Q51.9 10.7 51.9 10.3L51.4 7.8Q51.6 5.9 53.5 5.8Q55.3 5.8 58.3 7.4Q61.3 9 62.1 10.5Q62.8 11.9 62.9 13Q62.9 14.1 62.7 15.9Q62.5 17.1 62.1 22.6L61.7 28.8Z","t":[[56.6,12.2],[54.9,77.3],[59.8,84.7],[86,82.5]]}],"ㄧ":[{"o":"M17.5 45.2L26 44.3Q42.1 42.8 56.7 41.4L69.6 40.3Q70.4 40.2 75.1 39.7Q79.8 39.1 81.8 39.1Q84.7 39.2 86.5 40Q88.4 40.8 89.9 42.3Q91.4 43.9 92.2 45.6Q93 47.3 92.8 48.6Q92.7 50 91.3 51.1Q90 52.2 86.8 51.9L79 51.2Q72.6 50.7 69.7 50.6Q66.8 50.5 57.3 50.9Q47.8 51.2 36 52.3Q24.1 53.3 19.1 54.1Q14.1 54.9 12.8 55.3L11 55.9Q9.9 56.2 8.9 56.2Q7.7 56.2 6.5 55.6Q5.3 54.9 4.3 53.1Q3.2 51.3 2.8 50.3Q2.4 49.2 2.4 47.9Q2.4 46.7 3.1 46Q3.9 45.4 5.8 45.4L9.8 45.5Q12.9 45.6 17.5 45.2Z","t":[[9,51],[85.3,45.1]]}],"ㄨ":[{"o":"M53 42.7L57.3 37.1Q58.6 35.3 60.8 31.7Q63 28.1 64.7 24.7Q66.4 21.4 67.5 18.3Q68.6 15.1 68.9 13.3Q69.3 11.6 69.4 10.2Q69.4 8.7 69.7 7Q70 5.2 73.5 5Q75.7 4.9 77.7 6.6Q79.7 8.4 80.5 9.7Q81.2 11 81.6 12.2Q81.9 13.4 81.9 14.2Q82 15 81.2 16.5Q80.8 17.1 79.7 19Q78.5 20.9 75.3 26.7Q72 32.4 70.8 34.3Q69.5 36.2 66 41.3L60.8 48.6L55.5 56.1Q43.9 68 37.5 73.4Q31.1 78.8 23.7 82.2Q16.4 85.5 7.2 87.1L4.8 87.5Q3.8 87.7 3.6 87.1Q3.3 86.5 5.1 85.6L8.2 84.1Q16.9 79.8 28 70.3Q39 60.8 47.8 48.9L53 42.7Z","t":[[76,11.6],[54.7,49.1],[26.5,78],[9,85.4]]},{"o":"M47.8 48.9Q41.8 43.5 36.8 39.2Q31.9 34.8 15.5 21.5L12.7 19.2Q12.4 19 12.3 18.6Q12.1 18.2 12.3 17.9Q12.6 17.5 13.9 18L17.6 19.6Q22 21.5 32.1 28.1Q42.2 34.7 53 42.7L60.8 48.6Q64 51.3 71.3 57.3Q78.5 63.4 81.7 66.3Q85 69.2 87.3 71.9Q89.5 74.6 90.5 76.9Q91.5 79.3 91.6 81.4Q91.6 83.6 91.2 85.7Q90.6 88.2 89.1 89.8Q87.6 91.3 85 89.4Q83.3 88.4 81.7 86.3L78.3 82.2Q62.9 63.7 61.6 62.4L55.5 56.1L47.8 48.9Z","t":[[17.8,21.2],[55.6,49.9],[87,82.1]]}],"ㄩ":[{"o":"M76.5 77.8Q75.7 77.5 74.7 77.5L72.1 77.7L63.3 78.3L47.1 80Q41 80.7 38 81Q34.9 81.4 29.1 82.4Q23.3 83.4 21.7 84.1Q20.1 84.9 18.2 86Q16.3 87 15.2 87.2Q14 87.3 11 85.4Q8.2 83.7 6.9 82.7Q5.5 81.6 5 80.6Q4.5 79.6 4.4 78.8Q4.4 78 4.5 77Q4.7 75.2 4.9 73.9Q5 72.6 5.1 71.3L6.4 34.2Q6.5 30.4 6.5 28.7Q6.5 27 6.4 24.3Q6.2 22.1 5.9 20.5Q5.6 18.9 5.4 17.3Q5.3 15.7 8.4 15.3Q9.4 15.2 13.2 16.2Q17 17.2 18 19Q19.1 20.8 19.1 21.9Q19.2 22.9 18.9 24.8Q18.7 26.3 18.5 30Q18.2 33.7 18.1 37L16.4 71.1Q16.3 73.3 17.2 74.5Q18.1 75.6 25 74.8L47.9 72L78.4 68.5Q82.6 71.3 76.5 77.8Z","t":[[12.1,19.1],[11.2,80.5],[79.1,72.1]]},{"o":"M78.4 68.5L78.5 58.2Q78.5 51.9 78.4 47.9L78 39.8Q77.5 31.1 77.3 28.9Q77.2 26.8 76.6 23.1Q76.1 19.4 75.4 16.8Q74.7 14.2 74.6 13.1Q74.5 12 75 11Q75.4 10.1 77.3 9.1Q79.2 8.2 81.3 8.2Q83.3 8.2 85.2 9.2Q87 10.2 87.9 11.6Q88.7 13 89 15.2Q89.3 17.4 89.4 20.9Q89.5 24.4 89.6 27.8L90 58L90.2 65.5Q90.2 68.2 90.3 69.4Q90.3 70.7 90.6 73.3Q90.8 75.9 90.8 77.1Q90.7 79.2 89.9 81.7Q89.1 84.2 85.6 84Q84.9 84 84.2 83.8Q83.5 83.5 82.4 82.6L78.7 79.2Q69 72.4 78.4 68.5Z","t":[[81.5,13.2],[85.1,78.1],[77.4,73.7]]}]};
+const GLYPHS = {};
+for(const [k,v] of Object.entries(LETTER_PATHS)) GLYPHS[k] = v.map(c=>({t:pathPoints(c)}));
+for(const [k,v] of Object.entries(ZY_STROKES)) GLYPHS[k] = v.map(s=>({t:s.t, o:s.o}));
+function resample(pts, step){
+  const out=[pts[0]];
+  for(let s=1;s<pts.length;s++){
+    const [x0,y0]=out[out.length-1], [x1,y1]=pts[s];
+    let d=Math.hypot(x1-x0,y1-y0); if(d<1e-6) continue;
+    let px=x0, py=y0;
+    while(d>=step){ px+= (x1-px)*step/d; py+=(y1-py)*step/d; out.push([px,py]); d=Math.hypot(x1-px,y1-py); }
+  }
+  const last = pts[pts.length-1], tail = out[out.length-1];
+  if(Math.hypot(last[0]-tail[0], last[1]-tail[1]) > 0.5) out.push(last);
+  return out;
+}
+
 function traceGame(){ go(()=>{
   setTitle('描一描');
-  const SETS = {
-    abc:[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
-    num:[...'123456789'],
-    zy:[...'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ']
-  };
-  const HINT = {A:'apple',B:'ball',C:'cat',D:'dog',E:'egg',F:'fish',G:'goat',H:'hat',I:'ice cream',J:'juice',K:'kite',L:'lion',M:'milk',N:'nose',O:'orange',P:'pig',Q:'queen',R:'rabbit',S:'sun',T:'tree',U:'umbrella',V:'van',W:'water',X:'fox',Y:'yo-yo',Z:'zoo'};
-  // 英文、數字、注音全部混在一起隨機出題
-  const ITEMS = shuffle([...SETS.abc, ...SETS.num, ...SETS.zy]);
-  let idx = 0, done=false;
+  const ITEMS = shuffle([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', ...'123456789', ...ZY_LIST]);
+  let idx = 0;
   const w = el('div','wrap'); stage.appendChild(w);
-  const top = el('div','prompt'); const box = el('div','trace-box'); const meter = el('div','meter','<i></i>'); const row = el('div','row');
-  w.append(top, box, meter, row);
+  const top = el('div','prompt'); const steps = el('div','steps'); const box = el('div','trace-box');
+  const status = el('div','status'); const row = el('div','row');
+  w.append(top, steps, box, status, row);
   const guide = document.createElement('canvas'), draw = document.createElement('canvas');
   box.append(guide, draw);
-  const mask = document.createElement('canvas');
-  const sayBtn = el('button','say','🔊'); const nameEl = el('span','en');
-  top.append(sayBtn, nameEl);
-  const prevB = el('button','btn plain','◀'), clearB = el('button','btn red',zy('擦掉')), nextB = el('button','btn plain','▶');
+  const sayBtn = el('button','say','🔊'); sayBtn.setAttribute('aria-label','再聽一次');
+  const nameEl = el('span','en'); top.append(sayBtn, nameEl);
+  const prevB = el('button','btn plain','◀'), demoB = el('button','btn plain','👀 看筆順'), clearB = el('button','btn red','重來'), nextB = el('button','btn plain','▶');
   prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
-  row.append(prevB, clearB, nextB);
-  let S=300, dpr=1, pts=[], gctx, dctx;
+  row.append(prevB, demoB, clearB, nextB);
+
+  let S=300, dpr=1, gctx, dctx, strokes=[], cur=0, prog=0, demoing=0, done=false, path=[], drawing=false, started=false;
   const ch = ()=>ITEMS[idx];
   const isZy = c => !!ZY[c];
-  const sayIt = ()=>{ const c=ch();
-    if(isZy(c)){ zySay(c); }
-    else if(/\d/.test(c)) say(EN_NUM[+c]); else say(c, HINT[c]); };
+  const sayIt = ()=>{ const c=ch(); if(isZy(c)) return zySay(c); if(/\d/.test(c)) return say(EN_NUM[+c]); return say(c+'.', HINT[c]); };
   sayBtn.onclick = sayIt;
+  const U = ()=>S*dpr/100;              // 1 單位 = 幾個像素
+  const R_START = 15, R_FOLLOW = 13, LOOK = 26;   // 容許誤差（單位）
+
   function size(){
-    const avail = stage.clientHeight - top.offsetHeight - meter.offsetHeight - row.offsetHeight - 80;
+    const avail = stage.clientHeight - top.offsetHeight - steps.offsetHeight - status.offsetHeight - row.offsetHeight - 90;
     S = Math.max(220, Math.min(stage.clientWidth - 32, avail, 560));
     box.style.width = box.style.height = S+'px';
     dpr = window.devicePixelRatio||1;
-    [guide,draw,mask].forEach(c=>{ c.width=c.height=Math.round(S*dpr) });
+    [guide,draw].forEach(c=>{ c.width=c.height=Math.round(S*dpr) });
     gctx=guide.getContext('2d'); dctx=draw.getContext('2d');
   }
-  function letterPath(ctx, fill){
-    const P = guide.width; const c = ch();
-    ctx.font = isZy(c)
-      ? `700 ${Math.round(P*0.72)}px "PingFang TC","Heiti TC","Noto Sans TC","Microsoft JhengHei",sans-serif`
-      : `600 ${Math.round(P*0.78)}px Fredoka, "PingFang TC", sans-serif`;
-    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-    const m = ctx.measureText(c);
-    const h = (m.actualBoundingBoxAscent||P*0.56) + (m.actualBoundingBoxDescent||0);
-    const y = P/2 + h/2 - (m.actualBoundingBoxDescent||0);
-    if(fill){ ctx.fillText(c, P/2, y) } else { ctx.strokeText(c, P/2, y) }
+  function strokeShape(ctx, s, color, width){
+    const u = U();
+    if(s.o){ ctx.save(); ctx.scale(u,u); ctx.fillStyle = color; ctx.fill(new Path2D(s.o)); ctx.restore(); }
+    else { ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=(width||12)*u; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); s.t.forEach(([x,y],k)=> k? ctx.lineTo(x*u,y*u) : ctx.moveTo(x*u,y*u)); ctx.stroke(); ctx.restore(); }
+  }
+  // 畫到第 upto 個取樣點（示範動畫用）
+  function partialStroke(ctx, s, upto, color){
+    const u = U(), pts = s.r.slice(0, Math.max(1, upto+1));
+    ctx.save();
+    if(s.o){ ctx.beginPath(); ctx.scale(u,u); ctx.clip(new Path2D(s.o)); ctx.setTransform(1,0,0,1,0,0); }
+    ctx.strokeStyle=color; ctx.lineWidth=(s.o?20:12)*u; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); pts.forEach(([x,y],k)=> k? ctx.lineTo(x*u,y*u) : ctx.moveTo(x*u,y*u)); ctx.stroke(); ctx.restore();
+  }
+  const INK='#34B977', GUIDE='#DCE8F5', NOW='#FFC23A';
+  function renderGuide(){
+    const P = guide.width; gctx.clearRect(0,0,P,P);
+    // 田字格的中線
+    gctx.save(); gctx.strokeStyle='#EEF3FA'; gctx.lineWidth=2*dpr; gctx.setLineDash([8*dpr,8*dpr]);
+    gctx.beginPath(); gctx.moveTo(P/2,0); gctx.lineTo(P/2,P); gctx.moveTo(0,P/2); gctx.lineTo(P,P/2); gctx.stroke(); gctx.restore();
+    strokes.forEach((s,k)=> strokeShape(gctx, s, k<cur ? INK : (k===cur && !demoing ? '#CFE0F2' : GUIDE)));
+    if(!demoing && cur < strokes.length) drawStartMark(strokes[cur], cur+1);
+    steps.innerHTML = strokes.map((_,k)=>`<i class="${k<cur?'on':k===cur?'cur':''}"></i>`).join('');
+  }
+  function drawStartMark(s, n){
+    const u = U(), [x,y] = s.r[0], [x2,y2] = s.r[Math.min(4, s.r.length-1)];
+    // 方向箭頭
+    const ang = Math.atan2(y2-y, x2-x);
+    gctx.save(); gctx.translate(x*u, y*u); gctx.rotate(ang);
+    gctx.fillStyle = NOW; gctx.beginPath(); gctx.moveTo(14*u,0); gctx.lineTo(8*u,-4*u); gctx.lineTo(8*u,4*u); gctx.closePath(); gctx.fill();
+    gctx.restore();
+    gctx.save(); gctx.fillStyle = INK; gctx.beginPath(); gctx.arc(x*u, y*u, 5.5*u, 0, Math.PI*2); gctx.fill();
+    gctx.fillStyle = '#fff'; gctx.font = `700 ${7*u}px Fredoka, sans-serif`; gctx.textAlign='center'; gctx.textBaseline='middle';
+    gctx.fillText(String(n), x*u, y*u+0.3*u); gctx.restore();
   }
   function setup(){
-    done=false; meter.firstChild.style.width='0%';
+    done=false; cur=0; prog=0; path=[]; started=false;
     const c0 = ch();
-    nameEl.innerHTML = isZy(c0) ? `<span class="zyhint">${ZY[c0][2]} ${zy(ZY[c0][1])}</span>` : c0;
-    const P = guide.width;
-    gctx.clearRect(0,0,P,P);
-    gctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--guide').trim();
-    letterPath(gctx,true);
-    gctx.setLineDash([P*0.02,P*0.02]); gctx.lineWidth = P*0.008; gctx.strokeStyle='#8FA8C8'; letterPath(gctx,false); gctx.setLineDash([]);
-    const mctx = mask.getContext('2d'); mctx.clearRect(0,0,P,P); mctx.fillStyle='#000'; letterPath(mctx,true);
-    const data = mctx.getImageData(0,0,P,P).data; pts=[];
-    const step = Math.max(2, Math.round(P/45));
-    for(let y=0;y<P;y+=step) for(let x=0;x<P;x+=step){ pts.push([x,y,data[(y*P+x)*4+3]>128]) }
-    dctx.clearRect(0,0,P,P);
+    strokes = GLYPHS[c0].map(s=>({...s, r: resample(s.t, 2)}));
+    nameEl.innerHTML = isZy(c0) ? `<span class="zyhint">${c0}　${ZY[c0][2]} ${escH(ZY[c0][1])}</span>` : (/\d/.test(c0) ? c0 : `${c0}　<span class="zyhint" style="font-size:.7em">${escH(HINT[c0])}</span>`);
+    dctx.clearRect(0,0,draw.width,draw.height);
+    renderGuide();
+    status.textContent = `從綠色的 1 開始，照箭頭的方向描（共 ${strokes.length} 筆）`;
   }
-  function check(){
-    const P = draw.width; const d = dctx.getImageData(0,0,P,P).data;
-    // 字的筆畫比手指描的線粗：字上的一點，只要附近（半個筆刷寬）有描到就算描到
-    const r = Math.round(P*0.05);
-    const hit = (x,y)=> x>=0&&y>=0&&x<P&&y<P && d[(y*P+x)*4+3]>0;
-    const near = (x,y)=> hit(x,y)||hit(x+r,y)||hit(x-r,y)||hit(x,y+r)||hit(x,y-r)||hit(x+r,y+r)||hit(x-r,y-r)||hit(x+r,y-r)||hit(x-r,y+r);
-    let inT=0,inC=0,outC=0,drawn=0;
-    for(const [x,y,inside] of pts){
-      if(inside){ inT++; if(near(x,y)) inC++; }
-      if(hit(x,y)){ drawn++; if(!inside) outC++; }
+  async function demo(){
+    const my = ++demoing; dctx.clearRect(0,0,draw.width,draw.height);
+    const keepCur = cur; cur = 0; renderGuide();
+    status.textContent = '看清楚筆順喔';
+    for(let k=0;k<strokes.length;k++){
+      const s = strokes[k], n = s.r.length, dur = Math.min(1100, 250 + n*12), t0 = performance.now();
+      await new Promise(res=>{
+        const f = now=>{
+          if(my!==demoing) return res();
+          const p = Math.min(1,(now-t0)/dur);
+          partialStroke(dctx, s, Math.round(p*(n-1)), INK);
+          p<1 ? requestAnimationFrame(f) : res();
+        };
+        requestAnimationFrame(f);
+      });
+      if(my!==demoing) return;
+      await sleep(200);
     }
-    const cover = inT? inC/inT : 0; const outside = drawn? outC/drawn : 0;
-    const NEED = 0.8;
-    meter.firstChild.style.width = Math.min(100, Math.round(cover/NEED*100))+'%';
-    const zyNow = isZy(ch());
-    if(!done && cover>NEED && outside<0.6){
-      done=true; addStar(); cheer();
-      if(zyNow) zh('好棒！'+ZY[ch()][0]);
-      else say('好棒！', /\d/.test(ch())?EN_NUM[+ch()]:ch());
-      setTimeout(()=>{ if(done){ idx=(idx+1)%ITEMS.length; setup(); setTimeout(sayIt,200);} },1800);
+    await sleep(500);
+    if(my!==demoing) return;
+    demoing = 0; cur = keepCur; dctx.clearRect(0,0,draw.width,draw.height); renderGuide();
+    status.textContent = `換你了！從綠色的 ${cur+1} 開始描`;
+  }
+  const pos = e=>{ const r=draw.getBoundingClientRect(); return [(e.clientX-r.left)*100/r.width,(e.clientY-r.top)*100/r.height] };
+  function inkLine(a,b){ const u=U(); dctx.strokeStyle='rgba(255,106,77,.85)'; dctx.lineWidth=7*u; dctx.lineCap='round'; dctx.lineJoin='round'; dctx.beginPath(); dctx.moveTo(a[0]*u,a[1]*u); dctx.lineTo(b[0]*u,b[1]*u); dctx.stroke(); }
+  function follow(p){
+    const r = strokes[cur].r;
+    if(!started){ if(Math.hypot(p[0]-r[0][0], p[1]-r[0][1]) <= R_START){ started=true; prog=0; } else return; }
+    // 只能往前：在目前進度往後 LOOK 個點之內，找最遠且夠近的點
+    const end = Math.min(r.length-1, prog + LOOK);
+    for(let j=end;j>prog;j--){ if(Math.hypot(p[0]-r[j][0], p[1]-r[j][1]) <= R_FOLLOW){ prog=j; break; } }
+  }
+  function endStroke(){
+    const r = strokes[cur].r;
+    dctx.clearRect(0,0,draw.width,draw.height);
+    if(started && prog >= r.length*0.85 - 1){
+      cur++; prog=0; started=false;
+      renderGuide();
+      if(cur >= strokes.length) return finish();
+      status.textContent = `很好！接著描第 ${cur+1} 筆`;
+    } else {
+      started=false; prog=0;
+      status.textContent = started ? '要描完整一筆喔，再試一次' : `從綠色的 ${cur+1} 開始，照箭頭方向描`;
+      renderGuide();
     }
   }
-  let drawing=false, last=null;
-  const pos = e=>{ const r=draw.getBoundingClientRect(); return [(e.clientX-r.left)*draw.width/r.width,(e.clientY-r.top)*draw.height/r.height] };
-  draw.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; last=pos(e); try{draw.setPointerCapture(e.pointerId)}catch(_){} line(last,last); });
-  draw.addEventListener('pointermove', e=>{ if(!drawing) return; const p=pos(e); line(last,p); last=p; });
-  const up = ()=>{ if(drawing){ drawing=false; check(); } };
+  async function finish(){
+    if(done) return; done=true;
+    addStar(); cheer();
+    status.textContent = '描好了！';
+    const c = ch();
+    await capped(isZy(c) ? say('好棒！', {zy:c}) : say('好棒！', /\d/.test(c)?EN_NUM[+c]:c+'.'), 3000);
+    setTimeout(()=>{ if(done){ idx=(idx+1)%ITEMS.length; setup(); startItem(); } }, 600);
+  }
+  draw.addEventListener('pointerdown', e=>{
+    e.preventDefault(); if(demoing || done) return;
+    drawing=true; path=[pos(e)]; try{draw.setPointerCapture(e.pointerId)}catch(_){}
+    follow(path[0]); inkLine(path[0],path[0]);
+  });
+  draw.addEventListener('pointermove', e=>{
+    if(!drawing) return; const p=pos(e); inkLine(path[path.length-1], p); path.push(p); follow(p);
+  });
+  const up = ()=>{ if(drawing){ drawing=false; endStroke(); } };
   draw.addEventListener('pointerup', up); draw.addEventListener('pointercancel', up);
-  function line(a,b){ dctx.strokeStyle='#FF6A4D'; dctx.lineWidth=draw.width*0.085; dctx.lineCap='round'; dctx.lineJoin='round'; dctx.beginPath(); dctx.moveTo(a[0],a[1]); dctx.lineTo(b[0],b[1]); dctx.stroke(); }
-  clearB.onclick = ()=>{ dctx.clearRect(0,0,draw.width,draw.height); meter.firstChild.style.width='0%'; done=false; };
-  prevB.onclick = ()=>{ idx=(idx-1+ITEMS.length)%ITEMS.length; setup(); sayIt(); };
-  nextB.onclick = ()=>{ idx=(idx+1)%ITEMS.length; setup(); sayIt(); };
-  const onResize = ()=>{ size(); setup(); };
+  async function startItem(){ await sayIt(); if(!done && cur===0) demo(); }
+  clearB.onclick = ()=>{ demoing=0; setup(); };
+  demoB.onclick = ()=>{ demo(); };
+  prevB.onclick = ()=>{ demoing=0; idx=(idx-1+ITEMS.length)%ITEMS.length; setup(); startItem(); };
+  nextB.onclick = ()=>{ demoing=0; idx=(idx+1)%ITEMS.length; setup(); startItem(); };
+  const onResize = ()=>{ const keep=cur; size(); renderGuide(); cur=keep; };
   window.addEventListener('resize', onResize);
-  cleanup = ()=>window.removeEventListener('resize', onResize);
-  requestAnimationFrame(()=>{ size(); setup(); (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{ size(); setup(); }); setTimeout(sayIt,300); });
+  cleanup = ()=>{ demoing=0; window.removeEventListener('resize', onResize); };
+  requestAnimationFrame(()=>{ size(); setup(); setTimeout(startItem, 300); });
 })}
 
-/* 4. math: count objects (1–10) & add with numerals (sum ≤ 10) */
+/* ============ 4. 算一算 ============ */
 function mathGame(){ go(()=>{
   setTitle('算一算');
   const THINGS = ['🍎','🍓','🐥','⭐','🎈','🍪','🐟','🌸'];
@@ -599,17 +755,16 @@ function mathGame(){ go(()=>{
   function round(){
     locked=false; mode++; objs.innerHTML='';
     let label;
-    if(mode%2){ // count
-      const t = pick(THINGS);
-      n = 1+Math.floor(Math.random()*10);
+    if(mode%2){
+      const t = pick(THINGS); n = 1+Math.floor(Math.random()*10);
       for(let k=0;k<n;k++) objs.appendChild(el('span','',t));
       q='一共有幾個？'; label=q;
-    } else { // add with numbers
+    } else {
       const a=1+Math.floor(Math.random()*5), b=1+Math.floor(Math.random()*5); n=a+b;
       objs.innerHTML = `<div class="eq">${a}<i>+</i>${b}<i>=</i><b>?</b></div>`;
       q=`${a} 加 ${b} 等於多少？`; label='加起來是多少？';
     }
-    prompt.innerHTML = `<span>${zy(label)}</span>`;
+    prompt.innerHTML = `<span>${label}</span>`;
     const s=el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick=()=>zh(q); prompt.prepend(s);
     const set = new Set([n]); while(set.size<3){ const v=n+Math.floor(Math.random()*5)-2; if(v>=1&&v<=10) set.add(v) }
     ans.innerHTML='';
@@ -620,7 +775,8 @@ function mathGame(){ go(()=>{
         if(v===n){
           locked=true; b.classList.add('ok');
           const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = n;
-          addStar(); cheer('答對了！'); await capped(say('答對了！', EN_NUM[n])); setTimeout(round,500);
+          addStar(); cheer('答對了！');
+          await capped(say('答對了！', EN_NUM[n]+'.'), 3500); setTimeout(round,500);
         }
         else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); zh(mode%2?'再數數看':'再算算看'); }
       };
@@ -629,6 +785,110 @@ function mathGame(){ go(()=>{
     setTimeout(()=>zh(q),300);
   }
   round();
+})}
+
+/* ============ 貼紙本 ============ */
+function stickerBook(){ go(()=>{
+  setTitle('貼紙本');
+  const w = el('div','wrap'); stage.appendChild(w);
+  const n = stickerCount(), left = PER_STICKER - stars % PER_STICKER;
+  const head = el('div','bookhead');
+  head.innerHTML = `<b>已收集 ${n} / ${STICKERS.length} 張</b>` +
+    (n < STICKERS.length ? `<div>⭐ 再 ${left} 顆星，就能換下一張貼紙</div><div class="meter"><i style="width:${(stars%PER_STICKER)/PER_STICKER*100}%"></i></div>` : '<div>全部收集完了！你好厲害！</div>');
+  const book = el('div','book');
+  STICKERS.forEach((s,k)=>{
+    const c = el('button', k<n ? 'stk' : 'stk lock', k<n ? s : '?');
+    c.style.border = k<n ? '0' : ''; c.style.cursor = k<n ? 'pointer' : 'default';
+    if(k<n) c.onclick = ()=>{ c.animate([{transform:'scale(1)'},{transform:'scale(1.3) rotate(-8deg)'},{transform:'scale(1)'}],{duration:500}); };
+    book.appendChild(c);
+  });
+  w.append(head, book);
+  zh(n ? `你有 ${n} 張貼紙` : '答對題目就能拿到星星，五顆星換一張貼紙');
+})}
+
+/* ============ 爸媽設定 ============ */
+function settings(){ go(()=>{
+  setTitle('爸媽設定');
+  const w = el('div','set'); stage.appendChild(w);
+
+  // 聲音
+  const s1 = el('div','sec', '<h2>聲音</h2><p>沒聲音時：關掉靜音模式、調大媒體音量、確認沒有連著藍牙耳機。</p>');
+  const tbtn = el('button','btn plain small','🔈 測試聲音'); const tlog = el('div','tlog');
+  tbtn.onclick = ()=>{
+    const lines=[]; const show=s=>{ lines.push(s); tlog.textContent=lines.join('｜'); };
+    try{ const AC=window.AudioContext||window.webkitAudioContext; const ac=new AC(); const o=ac.createOscillator(); const g=ac.createGain(); o.frequency.value=660; g.gain.value=.2; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+.25); show('嗶聲：已播放'); }catch(e){ show('嗶聲：失敗'); }
+    if(!('speechSynthesis' in window)){ show('語音：不支援'); return; }
+    let vs=[]; try{ vs=speechSynthesis.getVoices() }catch(e){}
+    show(`語音數 ${vs.length}`);
+    speak('Hello! 你好！','zh-TW',0.9).then(()=>show('語音：唸完了'));
+  };
+  s1.append(tbtn, tlog);
+  const mkSel = (k, label, test, sample) => {
+    const wrap = el('label','vrow'); wrap.htmlFor = 'voice-'+k;
+    wrap.appendChild(el('span','', label));
+    const sel = document.createElement('select'); sel.id = 'voice-'+k;
+    const fill = ()=>{ const cur = voicePref[k]||''; sel.innerHTML=''; sel.appendChild(new Option('系統預設','')); voices.filter(v=>test.test(v.lang)).sort((a,b)=>a.name.localeCompare(b.name)).forEach(v=>sel.appendChild(new Option(`${v.name}（${v.lang}）`, v.name))); sel.value=cur; };
+    fill();
+    try{ speechSynthesis.addEventListener('voiceschanged', ()=>{ loadVoices(); fill(); }) }catch(e){}
+    sel.addEventListener('focus', ()=>{ loadVoices(); fill(); });
+    sel.onchange = ()=>{ voicePref[k]=sel.value; lsSet('voicePref', voicePref); speak(sample, k==='zh'?'zh-TW':'en-US', k==='zh'?0.9:EN_RATE); };
+    wrap.appendChild(sel); return wrap;
+  };
+  s1.append(mkSel('zh','中文聲音',/^zh/i,'你好，我們來玩遊戲吧！'), mkSel('en','英文聲音',/^en/i,'Find the bird.'));
+  w.appendChild(s1);
+
+  // 注音怎麼唸
+  const s2 = el('div','sec','<h2>注音怎麼唸</h2><p>iPad 的語音沒有專門唸注音的功能。可以選比較好聽的方式；如果下面有爸媽錄音，一律用錄音。</p>');
+  [['homo','用同音字唸（ㄅ 唸成「玻」）'],['symbol','讓語音直接唸符號（有些語音唸得對）']].forEach(([v,label])=>{
+    const lab = el('label','opt'); const r = document.createElement('input'); r.type='radio'; r.name='zymode'; r.id='zymode-'+v; r.value=v; r.checked = zyMode===v;
+    r.onchange = ()=>{ zyMode=v; lsSet('zyMode', v); };
+    const t = el('button','btn plain small','▶ 試聽'); t.onclick = (e)=>{ e.preventDefault(); const old=zyMode; zyMode=v; say(`${zyText('ㄅ')}，${zyText('ㄆ')}，${zyText('ㄇ')}，${zyText('ㄈ')}`).then(()=>{ zyMode=lsGet('zyMode','homo'); }); };
+    lab.append(r, el('span','',label), t); s2.appendChild(lab);
+  });
+  w.appendChild(s2);
+
+  // 錄注音
+  const s3 = el('div','sec','<h2>爸媽錄注音</h2><p>按 ● 錄一個注音（例如「ㄅ」，最長 2.5 秒），再按 ▶ 聽聽看。錄好的注音，遊戲裡都會用你們的聲音唸。錄音只存在這台裝置的瀏覽器裡。</p>');
+  const grid = el('div','recgrid'); const rstat = el('div','tlog');
+  let busy = null, starting = false;
+  ZY_LIST.forEach(c=>{
+    const cell = el('div','rc'+(zyRecs.has(c)?' has':''));
+    cell.appendChild(el('span','sym',c));
+    const rb = el('button','','●'), pb = el('button','','▶'), db = el('button','','✕');
+    rb.setAttribute('aria-label','錄 '+c); pb.setAttribute('aria-label','播放 '+c); db.setAttribute('aria-label','刪除 '+c);
+    const sync = ()=>{ cell.classList.toggle('has', zyRecs.has(c)); pb.disabled = db.disabled = !zyRecs.has(c); };
+    sync();
+    rb.onclick = async ()=>{
+      if(starting) return;
+      if(busy && busy.c===c){ busy.ctl.stop(); return; }
+      if(busy) return;
+      if(!canRecord()){ rstat.textContent='這個瀏覽器不能錄音。請用 Safari 開遊戲網址。'; return; }
+      starting = true; rstat.textContent='準備中…';
+      try{ busy = {c, ctl: await startRecording(2500)}; starting = false; }catch(e){ starting = false; busy=null; rstat.textContent='沒有麥克風權限。請用 Safari 開遊戲網址，並允許使用麥克風。'; return; }
+      rb.classList.add('on'); rb.textContent='■'; rstat.textContent=`錄音中：請唸「${c}」`;
+      const blob = await busy.ctl.done; busy=null; rb.classList.remove('on'); rb.textContent='●';
+      if(blob){ zyRecs.set(c, blob); sync(); rstat.textContent=`「${c}」錄好了`; saveRec(c, blob); await playBlob(blob); }
+      else { rstat.textContent='沒有錄到聲音'; sync(); }
+    };
+    pb.onclick = ()=>{ if(zyRecs.has(c)) playBlob(zyRecs.get(c)); };
+    db.onclick = async ()=>{ zyRecs.delete(c); await idb.del(c); sync(); rstat.textContent=`已刪除「${c}」的錄音`; };
+    cell.append(rb,pb,db); grid.appendChild(cell);
+  });
+  s3.append(grid, rstat);
+  w.appendChild(s3);
+
+  // 進度
+  const s4 = el('div','sec', `<h2>進度</h2><p>星星 ${stars} 顆，貼紙 ${stickerCount()} 張。</p>`);
+  const reset = el('button','btn plain small','把星星和貼紙歸零');
+  let armed = false;
+  reset.onclick = ()=>{
+    if(!armed){ armed=true; reset.textContent='確定要歸零嗎？再按一次'; setTimeout(()=>{ armed=false; reset.textContent='把星星和貼紙歸零'; }, 4000); return; }
+    stars=0; lsSet('stars',0); renderStars(); s4.querySelector('p').textContent='星星 0 顆，貼紙 0 張。'; reset.textContent='已歸零'; armed=false;
+  };
+  s4.appendChild(reset);
+  w.appendChild(s4);
+
+  w.appendChild(el('p','credit','注音筆順資料：教育部「常用國字標準字體筆順學習網」，經 <a href="https://github.com/g0v/zh-stroke-data" target="_blank" rel="noopener">g0v zh-stroke-data</a> 整理。英文字母與數字筆順為常見教學寫法。'));
 })}
 
 home();
