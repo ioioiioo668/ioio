@@ -306,6 +306,18 @@ function playBlob(blob){
     }catch(e){ res(); }
   });
 }
+// 錄音失敗時，告訴爸媽真正的原因
+function micErrorText(e){
+  const inFrame = (()=>{ try{ return window.top !== window.self }catch(_){ return true } })();
+  const name = (e && e.name) || '';
+  if(inFrame) return '你是在 Claude 裡面的預覽開的，這裡不能用麥克風。請把遊戲網址貼到 Safari 開。';
+  if(!window.isSecureContext) return '網址不是 https，不能用麥克風。';
+  if(name==='NotAllowedError' || name==='SecurityError')
+    return '麥克風被擋住了（' + name + '）。請到 iPad「設定 → App → Safari → 麥克風」改成「詢問」或「允許」；或在 Safari 網址列左邊按「ㄚA」→「網站設定」→ 麥克風改成「允許」，再重新整理。';
+  if(name==='NotFoundError' || name==='OverconstrainedError') return '找不到麥克風（' + name + '）。';
+  if(name==='NotReadableError' || name==='AbortError') return '麥克風正被別的 App 使用中（' + name + '），請關掉其他 App 再試。';
+  return '不能錄音（' + (name || (e && e.message) || '未知原因') + '）。';
+}
 const canRecord = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
 // 開始錄音；回傳 {stop(), done: Promise<Blob|null>}
 async function startRecording(maxMs){
@@ -517,7 +529,7 @@ function repeatGame(){ go(()=>{
       recStarting = false;
     }catch(e){
       recStarting = false;
-      status.textContent = '這裡不能錄音，請大聲唸出來，唸完按 ⭐';
+      status.textContent = micErrorText(e) + ' 現在先大聲唸出來，唸完按 ⭐';
       showJudge(true); return;
     }
     micB.classList.add('rec'); micB.textContent = '⏹ 說完了';
@@ -839,7 +851,7 @@ async function recordKey(key, label, onState){
   if(!canRecord()){ onState('這個瀏覽器不能錄音。請用 Safari 開遊戲網址。'); return; }
   recStarting = true; onState('準備中…', 'starting');
   try{ recBusy = {key, ctl: await startRecording(3000)}; }
-  catch(e){ recStarting = false; onState('沒有麥克風權限。請用 Safari 開遊戲網址，並允許使用麥克風。'); return; }
+  catch(e){ recStarting = false; onState(micErrorText(e)); return; }
   recStarting = false;
   onState(`錄音中：請唸「${label}」`, 'rec');
   const blob = await recBusy.ctl.done; recBusy = null;
@@ -857,7 +869,7 @@ function recCell(it){
   sync();
   rb.onclick = ()=>recordKey(it.key, it.label, (msg, st)=>{
     rb.classList.toggle('on', st==='rec'); rb.textContent = st==='rec' ? '■' : '●';
-    cell.title = msg; if(st==='saved' || st==='idle') sync();
+    cell.title = msg; const line = document.getElementById('recmsg'); if(line) line.textContent = msg; if(st==='saved' || st==='idle') sync();
   });
   pb.onclick = ()=>{ if(recs.has(it.key)) playBlob(recs.get(it.key)); };
   db.onclick = async ()=>{ recs.delete(it.key); await idb.del(it.key); sync(); };
@@ -943,6 +955,7 @@ function settings(){ go(()=>{
   const total = REC_GROUPS.reduce((a,g)=>a+g.items.length,0);
   const done = REC_GROUPS.reduce((a,g)=>a+g.items.filter(it=>recs.has(it.key)).length,0);
   s3.appendChild(el('div','tlog',`已錄 ${done} / ${total} 個`));
+  const recmsg = el('div','tlog'); recmsg.id = 'recmsg'; s3.appendChild(recmsg);
   REC_GROUPS.forEach(g=>{
     const d = document.createElement('details'); d.className='recgrp';
     const n = g.items.filter(it=>recs.has(it.key)).length;
