@@ -44,6 +44,10 @@ button:focus-visible{outline:4px solid var(--berry);outline-offset:3px}
 .t1{background:var(--tomato)} .t2{background:var(--berry)} .t3{background:var(--leaf)} .t4{background:#F0A400}
 .soundtest{max-width:760px;width:100%;margin:16px auto 0;display:flex;flex-direction:column;align-items:center;gap:8px}
 .soundtest .btn{font-size:18px;padding:12px 18px}
+.voicepick{display:flex;flex-direction:column;gap:8px;width:100%;max-width:460px}
+.vrow{display:flex;align-items:center;gap:10px;font-size:16px}
+.vrow span{flex:none;width:5em}
+.vrow select{flex:1;min-width:0;font-size:16px;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
 .tlog{font-size:15px;color:var(--ink);text-align:center;line-height:1.6;user-select:text;-webkit-user-select:text}
 .note{max-width:760px;margin:12px auto 0;color:var(--soft);font-size:13px;line-height:1.6;text-align:center}
 
@@ -169,6 +173,7 @@ function speak(text, lang='en-US', rate=0.8){
       u.lang = lang; u.rate = rate; u.pitch = 1.1;
       // 不指定 voice：iOS 會列出尚未下載的語音，選到就完全沒聲音。只設 lang，讓系統用已安裝的預設語音
       u.volume = 1;
+      const pv = pickVoice(lang); if(pv){ u.voice = pv; u.lang = pv.lang; }
       let done=false; const fin=()=>{ if(!done){done=true;res()} };
       u.onend=fin; u.onerror=fin; setTimeout(fin, 6000);
       // iOS Safari 在 cancel() 後立刻 speak() 有時會被吞掉，稍等一下再唸
@@ -186,6 +191,41 @@ async function say(...parts){
     if(my !== sayToken) return;
     if(isEn(p)) await speak(p,'en-US',0.7); else await speak(p,'zh-TW',0.9);
   }
+}
+
+/* 爸爸媽媽可選聲音（只列出裝置上已有的語音）；沒選就用系統預設 */
+let voicePref = {zh:'', en:''};
+try{ voicePref = Object.assign(voicePref, JSON.parse(localStorage.getItem('voicePref')||'{}')); }catch(e){}
+function pickVoice(lang){
+  const k = lang.startsWith('zh') ? 'zh' : 'en';
+  return voicePref[k] ? (voices.find(v=>v.name===voicePref[k]) || null) : null;
+}
+function voicePicker(){
+  const box = el('div','voicepick');
+  const make = (k, label, test, sample) => {
+    const wrap = el('label','vrow'); wrap.htmlFor = 'voice-'+k;
+    wrap.appendChild(el('span','', label));
+    const sel = document.createElement('select'); sel.id = 'voice-'+k;
+    const fill = ()=>{
+      const list = voices.filter(v=>test.test(v.lang));
+      sel.innerHTML = '';
+      sel.appendChild(new Option('系統預設', ''));
+      list.sort((a,b)=>(/(enhanced|premium|加強|高品質)/i.test(b.name)?1:0)-(/(enhanced|premium|加強|高品質)/i.test(a.name)?1:0) || a.name.localeCompare(b.name))
+          .forEach(v=>sel.appendChild(new Option(`${v.name}（${v.lang}）`, v.name)));
+      sel.value = voicePref[k] || '';
+    };
+    fill();
+    if('speechSynthesis' in window) speechSynthesis.addEventListener('voiceschanged', ()=>{ loadVoices(); fill(); });
+    sel.onchange = ()=>{
+      voicePref[k] = sel.value;
+      try{ localStorage.setItem('voicePref', JSON.stringify(voicePref)) }catch(e){}
+      speak(sample, k==='zh'?'zh-TW':'en-US', k==='zh'?0.9:0.7);
+    };
+    wrap.appendChild(sel);
+    return wrap;
+  };
+  box.append(make('zh','中文聲音', /^zh/i, '你好，我們來玩遊戲吧！'), make('en','英文聲音', /^en/i, 'Find the bird.'));
+  return box;
 }
 
 /* 聲音測試：一個嗶聲（測喇叭）＋一句語音（測語音合成），結果直接顯示在畫面上 */
@@ -249,7 +289,7 @@ function home(){ go(()=>{
   const tbtn = el('button','btn plain','🔈 測試聲音');
   const tlog = el('div','tlog','沒聲音時請按這裡，並把下面顯示的文字告訴我');
   tbtn.onclick = soundTest(tlog);
-  tb.append(tbtn, tlog);
+  tb.append(tbtn, tlog, voicePicker());
   stage.appendChild(tb);
   stage.appendChild(el('p','note','請開啟聲音。「跟我唸」會試著使用麥克風；不能用時，改由爸爸媽媽按按鈕評分。'));
 })}
