@@ -216,6 +216,8 @@ function voicePicker(){
     };
     fill();
     if('speechSynthesis' in window) speechSynthesis.addEventListener('voiceschanged', ()=>{ loadVoices(); fill(); });
+    // 每次打開選單都重新抓一次裝置語音（剛下載的語音才會出現）
+    sel.addEventListener('focus', ()=>{ loadVoices(); const cur=sel.value; fill(); sel.value=cur; });
     sel.onchange = ()=>{
       voicePref[k] = sel.value;
       try{ localStorage.setItem('voicePref', JSON.stringify(voicePref)) }catch(e){}
