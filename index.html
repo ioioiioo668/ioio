@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="小星星樂園">
+<meta name="theme-color" content="#E6F4FF">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>小星星樂園</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+<style>
+/* Layout: one-screen app — top bar (home · title · stars), stage below; home is a 2×2 grid of big crayon-colored tiles. Deliberate single bright theme for kids. */
+:root{
+  --ground:#E6F4FF; --card:#FFFFFF; --ink:#1E2B4A; --soft:#5B6B8C; --line:#C7DCF2;
+  --tomato:#FF6A4D; --sun:#FFC23A; --leaf:#34B977; --berry:#7B5CFF; --guide:#D9E8F7;
+  --display:"Fredoka","PingFang TC","Heiti TC","Noto Sans TC",system-ui,sans-serif;
+  --body:"PingFang TC","Heiti TC","Noto Sans TC","Fredoka",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px}
+header h1{flex:1;margin:0;font-family:var(--display);font-size:clamp(20px,5vw,30px);font-weight:700;text-wrap:balance}
+.iconbtn{border:0;background:var(--card);color:var(--ink);width:52px;height:52px;border-radius:16px;font-size:26px;display:grid;place-items:center;box-shadow:0 3px 0 var(--line);cursor:pointer}
+.iconbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.stars{font-family:var(--display);font-weight:700;font-size:22px;background:var(--card);padding:10px 16px;border-radius:999px;box-shadow:0 3px 0 var(--line);font-variant-numeric:tabular-nums}
+#stage{flex:1;min-height:0;overflow:auto;padding-inline:16px;padding-block:4px 16px;display:flex;flex-direction:column}
+button{font-family:var(--body)}
+button:focus-visible{outline:4px solid var(--berry);outline-offset:3px}
+
+/* home */
+.home{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;max-width:760px;width:100%;margin:0 auto;align-content:center}
+.tile{border:0;border-radius:28px;color:#fff;padding:20px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:150px;cursor:pointer;box-shadow:0 6px 0 rgba(30,43,74,.18)}
+.tile:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(30,43,74,.18)}
+.tile svg{width:clamp(56px,14vw,96px);height:auto}
+.tile b{font-size:clamp(22px,5.5vw,34px);font-weight:800}
+.tile small{font-family:var(--display);font-size:clamp(14px,3.4vw,18px);font-weight:600;opacity:.9;letter-spacing:.04em}
+.t1{background:var(--tomato)} .t2{background:var(--berry)} .t3{background:var(--leaf)} .t4{background:#F0A400}
+.note{max-width:760px;margin:12px auto 0;color:var(--soft);font-size:13px;line-height:1.6;text-align:center}
+
+/* shared game bits */
+.wrap{max-width:820px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px;flex:1}
+.prompt{display:flex;align-items:center;justify-content:center;gap:12px;font-size:clamp(22px,5.5vw,34px);font-weight:800;text-align:center}
+.prompt .en{font-family:var(--display);color:var(--berry)}
+.say{border:0;background:var(--sun);color:var(--ink);width:60px;height:60px;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 0 #D99A10;flex:none}
+.say:active{transform:translateY(3px);box-shadow:0 1px 0 #D99A10}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;flex:1;align-content:center}
+.pic{border:0;background:var(--card);border-radius:24px;aspect-ratio:1;max-width:100%;font-size:clamp(52px,15vw,130px);cursor:pointer;box-shadow:0 5px 0 var(--line);display:grid;place-items:center}
+.pic.ok{background:#DDF7E9;box-shadow:0 5px 0 var(--leaf)}
+.pic.no{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.big{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--card);border-radius:28px;box-shadow:0 5px 0 var(--line);padding:20px}
+.big .emo{font-size:clamp(90px,26vw,190px);line-height:1.1}
+.big .word{font-family:var(--display);font-weight:700;font-size:clamp(48px,13vw,96px);letter-spacing:.04em}
+.big .zh{font-size:22px;color:var(--soft)}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{border:0;border-radius:20px;padding:16px 22px;font-size:22px;font-weight:800;cursor:pointer;color:#fff;background:var(--berry);box-shadow:0 4px 0 #5A3FD6;min-width:120px}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #5A3FD6}
+.btn.green{background:var(--leaf);box-shadow:0 4px 0 #24905B}
+.btn.red{background:var(--tomato);box-shadow:0 4px 0 #D24A31}
+.btn.plain{background:var(--card);color:var(--ink);box-shadow:0 4px 0 var(--line)}
+.btn.listening{animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.status{min-height:28px;text-align:center;font-size:18px;color:var(--soft)}
+.parent{background:#FFF5D6;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.parent p{margin:0;font-size:17px}
+
+/* trace */
+.trace-box{position:relative;align-self:center;background:var(--card);border-radius:28px;box-shadow:0 5px 0 var(--line);touch-action:none}
+.trace-box canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:28px}
+.tabs{display:flex;gap:10px;justify-content:center}
+.tab{border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:10px 20px;font-family:var(--display);font-weight:700;font-size:20px;box-shadow:0 3px 0 var(--line);cursor:pointer}
+.tab.on{background:var(--leaf);color:#fff;box-shadow:0 3px 0 #24905B}
+.zyhint{font-family:var(--body);color:var(--ink)}
+.meter{height:14px;background:var(--card);border-radius:99px;overflow:hidden;box-shadow:inset 0 0 0 2px var(--line);max-width:420px;width:100%;align-self:center}
+.meter i{display:block;height:100%;width:0;background:var(--leaf);border-radius:99px;transition:width .2s}
+
+/* math */
+.objs{background:var(--card);border-radius:28px;box-shadow:0 5px 0 var(--line);padding:18px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;min-height:150px;flex:1}
+.objs span{font-size:clamp(38px,9vw,64px);line-height:1.15}
+.objs .op{font-family:var(--display);font-weight:700;font-size:clamp(44px,10vw,72px);color:var(--berry);padding-inline:8px}
+.group{display:flex;flex-wrap:wrap;justify-content:center;max-width:46%}
+.answers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.num{border:0;background:var(--card);border-radius:24px;padding:14px 0;font-family:var(--display);font-weight:700;font-size:clamp(44px,11vw,72px);color:var(--ink);box-shadow:0 5px 0 var(--line);cursor:pointer}
+.num.ok{background:#DDF7E9;box-shadow:0 5px 0 var(--leaf)}
+.num.no{animation:shake .4s}
+
+/* cheer */
+#cheer{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:9}
+#cheer b{font-size:clamp(70px,20vw,150px);font-weight:900;color:var(--sun);-webkit-text-stroke:4px var(--ink);paint-order:stroke;opacity:0;transform:scale(.4)}
+.zycard{font-family:var(--body);font-weight:700;color:var(--ink)}
+.zybig{font-family:var(--body);font-weight:700;font-size:clamp(110px,30vw,220px);line-height:1.1}
+.eq{font-family:var(--display);font-weight:700;font-size:clamp(72px,20vw,150px);display:flex;align-items:center;justify-content:center;gap:.25em;font-variant-numeric:tabular-nums;line-height:1}
+.eq i{font-style:normal;color:var(--berry)}
+.eq b{color:var(--tomato)}
+#cheer b.go{animation:pop 1s ease-out}
+@keyframes pop{20%{opacity:1;transform:scale(1.1)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
+@media (max-width:420px){.btn{font-size:19px;padding:14px 16px;min-width:0}.cards{gap:10px}}
+</style>
+
+<div id="app">
+  <header>
+    <button class="iconbtn" id="homeBtn" aria-label="回首頁">⌂</button>
+    <h1 id="title">小星星樂園</h1>
+    <div class="stars" aria-label="星星數">⭐ <span id="starN">0</span></div>
+  </header>
+  <main id="stage"></main>
+</div>
+<div id="cheer"><b id="cheerTxt">棒！</b></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const stage = $('#stage');
+const WORDS = [
+  {en:'apple',zh:'蘋果',e:'🍎'},{en:'cat',zh:'貓咪',e:'🐱'},{en:'dog',zh:'狗狗',e:'🐶'},
+  {en:'fish',zh:'魚',e:'🐟'},{en:'sun',zh:'太陽',e:'☀️'},{en:'car',zh:'汽車',e:'🚗'},
+  {en:'ball',zh:'球',e:'⚽'},{en:'egg',zh:'蛋',e:'🥚'},{en:'bird',zh:'小鳥',e:'🐦'},
+  {en:'banana',zh:'香蕉',e:'🍌'},{en:'star',zh:'星星',e:'⭐'},{en:'cake',zh:'蛋糕',e:'🎂'},
+  {en:'duck',zh:'鴨子',e:'🦆'},{en:'tree',zh:'樹',e:'🌳'},{en:'milk',zh:'牛奶',e:'🥛'}
+];
+const EN_NUM = ['zero','one','two','three','four','five','six','seven','eight','nine','ten'];
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
+const el = (tag, cls, html) => { const n=document.createElement(tag); if(cls) n.className=cls; if(html!=null) n.innerHTML=html; return n; };
+
+/* stars */
+let stars = 0;
+try { stars = parseInt(localStorage.getItem('stars')||'0',10)||0 } catch(e){}
+$('#starN').textContent = stars;
+function addStar(){ stars++; $('#starN').textContent = stars; try{localStorage.setItem('stars',stars)}catch(e){} }
+const escH = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const zy = t => escH(t);
+function cheer(t){ const b=$('#cheerTxt'); b.innerHTML=zy(t||pick(['棒！','好厲害！','Yes!','讚！'])); b.classList.remove('go'); void b.offsetWidth; b.classList.add('go'); }
+
+/* speech out */
+let voices=[];
+function loadVoices(){ try{ voices = speechSynthesis.getVoices() }catch(e){} }
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function speak(text, lang='en-US', rate=0.8){
+  return new Promise(res=>{
+    if(!('speechSynthesis' in window)) return res();
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang; u.rate = rate; u.pitch = 1.1;
+      const norm = v => v.lang.replace('_','-');
+      const v = voices.find(v=>norm(v)===lang) || voices.find(v=>norm(v).startsWith(lang.slice(0,2)));
+      if(v) u.voice = v;
+      let done=false; const fin=()=>{ if(!done){done=true;res()} };
+      u.onend=fin; u.onerror=fin; setTimeout(fin, 5000);
+      speechSynthesis.speak(u);
+    }catch(e){ res() }
+  });
+}
+const zh = (t, r=0.9) => speak(t,'zh-TW',r);
+
+/* icons */
+const ICON = {
+  listen:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25h10l14-11v36L20 39H10z" fill="#fff"/><path d="M43 23a12 12 0 0 1 0 18M50 16a22 22 0 0 1 0 32"/></svg>',
+  repeat:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><rect x="22" y="6" width="20" height="34" rx="10" fill="#fff"/><path d="M13 30a19 19 0 0 0 38 0M32 49v9M22 58h20"/></svg>',
+  trace:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 54L28 10l16 44M18 38h20" stroke-dasharray="2 8"/><path d="M44 20l12 12-18 18-14 2 2-14z" fill="#fff"/></svg>',
+  math:'<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M18 10v20M8 20h20M38 20h18M10 44l16 14M26 44L10 58M38 46h18M38 56h18"/></svg>'
+};
+
+/* router */
+function setTitle(t){ $('#title').innerHTML=zy(t) }
+$('#homeBtn').onclick = home;
+let cleanup = null;
+function go(fn){ if(cleanup){cleanup();cleanup=null} try{speechSynthesis.cancel()}catch(e){} stage.innerHTML=''; fn(); stage.scrollTop=0; }
+
+function home(){ go(()=>{
+  setTitle('小星星樂園');
+  const g = el('div','home');
+  [['t1','listen','聽一聽','Listen',listenGame],['t2','repeat','跟我唸','Say it',repeatGame],
+   ['t3','trace','描一描','Trace',traceGame],['t4','math','算一算','Count',mathGame]].forEach(([c,ic,zhT,en,fn])=>{
+    const b = el('button','tile '+c, ICON[ic]+`<b>${zy(zhT)}</b><small>${en}</small>`);
+    b.onclick = ()=>{ zh(zhT); fn(); };
+    g.appendChild(b);
+  });
+  stage.appendChild(g);
+  stage.appendChild(el('p','note','請開啟聲音。「跟我唸」會試著使用麥克風；不能用時，改由爸爸媽媽按按鈕評分。'));
+})}
+
+/* 注音資料：唸音（用同音字讓語音正確發音）、例詞、圖、語音辨識可接受的同音字 */
+const ZY = {
+  'ㄅ':['玻','爸爸','👨','玻波播剝撥伯博'],'ㄆ':['坡','葡萄','🍇','坡潑婆破'],'ㄇ':['摸','媽媽','👩','摸模魔磨默'],'ㄈ':['佛','飛機','✈️','佛'],
+  'ㄉ':['得','弟弟','👦','得德的'],'ㄊ':['特','兔子','🐰','特'],'ㄋ':['呢','牛奶','🥛','呢訥'],'ㄌ':['勒','老虎','🐯','勒樂了'],
+  'ㄍ':['哥','哥哥','👦','哥歌個各格鴿'],'ㄎ':['科','蝌蚪','🐸','科可課顆渴棵'],'ㄏ':['喝','花','🌸','喝和河合賀'],
+  'ㄐ':['機','雞','🐔','機雞基幾記雞'],'ㄑ':['欺','氣球','🎈','欺七期其起氣'],'ㄒ':['希','西瓜','🍉','希西吸洗系'],
+  'ㄓ':['知','蜘蛛','🕷️','知之只直紙蜘'],'ㄔ':['吃','車子','🚗','吃池遲尺'],'ㄕ':['詩','獅子','🦁','詩師十是事獅'],'ㄖ':['日','日出','🌅','日'],
+  'ㄗ':['資','字','✏️','資字子自'],'ㄘ':['疵','刺蝟','🦔','疵次此詞刺'],'ㄙ':['思','三','3️⃣','思絲四死私司'],
+  'ㄧ':['衣','衣服','👕','衣一醫依'],'ㄨ':['烏','烏龜','🐢','烏屋五無午'],'ㄩ':['迂','魚','🐟','迂魚雨玉於'],
+  'ㄚ':['啊','嘴巴','👄','啊阿'],'ㄛ':['喔','公雞喔喔','🐓','喔哦噢'],'ㄜ':['鵝','白鵝','🦢','鵝餓額惡呃'],'ㄝ':['耶','耶誕節','🎄','耶也夜葉'],
+  'ㄞ':['哀','愛心','❤️','哀愛矮挨'],'ㄟ':['欸','杯子','🥤','欸誒'],'ㄠ':['凹','貓','🐱','凹奧熬襖'],'ㄡ':['歐','狗','🐶','歐偶嘔'],
+  'ㄢ':['安','飯','🍚','安按暗岸'],'ㄣ':['恩','門','🚪','恩嗯'],'ㄤ':['昂','糖','🍬','昂'],'ㄥ':['鞥','風','🌬️','鞥'],'ㄦ':['兒','耳朵','👂','兒二而耳']
+};
+const ZY_LIST = Object.keys(ZY);
+const zySay = c => { const [s,word]=ZY[c]; return zh(`${s}，${word}的${s}`,0.75); };
+
+/* 1. listen: find the picture (English) or the 注音 symbol */
+function listenGame(){ go(()=>{
+  setTitle('聽一聽');
+  const w = el('div','wrap'); stage.appendChild(w);
+  let locked=false, round_n=0;
+  const prompt = el('div','prompt'); const cards = el('div','cards');
+  w.append(prompt, cards);
+  function round(){
+    locked=false; round_n++;
+    const zyRound = round_n % 2 === 0;
+    let opts, target, sayTarget, sayOpt, label;
+    if(zyRound){
+      opts = shuffle(ZY_LIST).slice(0,3); target = pick(opts);
+      sayTarget = ()=>zh('哪一個是 '+ZY[target][0]+'？',0.8);
+      sayOpt = o => zh('這是 '+ZY[o][0],0.8);
+      label = '哪一個注音？';
+    } else {
+      opts = shuffle(WORDS).slice(0,3); target = pick(opts);
+      sayTarget = ()=>speak('Find the '+target.en);
+      sayOpt = o => speak('This is a '+o.en+'.');
+      label = `找出 <span class="en">${target.en}</span>`;
+    }
+    prompt.innerHTML = `<span>${label}</span>`;
+    const s = el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick=sayTarget;
+    prompt.prepend(s);
+    cards.innerHTML='';
+    opts.forEach(o=>{
+      const c = el('button', zyRound ? 'pic zycard' : 'pic', zyRound ? o : o.e);
+      c.setAttribute('aria-label', zyRound ? o : o.zh);
+      c.onclick = async ()=>{
+        if(locked) return;
+        if(o===target){
+          locked=true; c.classList.add('ok'); addStar(); cheer();
+          if(zyRound) await zySay(o); else await speak('Yes! '+o.en+'!');
+          setTimeout(round,500);
+        } else { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); await sayOpt(o); sayTarget(); }
+      };
+      cards.appendChild(c);
+    });
+    setTimeout(sayTarget,300);
+  }
+  round();
+})}
+
+/* 2. repeat after me: English words and 注音 mixed */
+function repeatGame(){ go(()=>{
+  setTitle('跟我唸');
+  const w = el('div','wrap'); stage.appendChild(w);
+  const ITEMS = shuffle([...WORDS.map(x=>({t:'en',...x})), ...ZY_LIST.map(c=>({t:'zy',c}))]);
+  let i = 0, rec=null, micBlocked=false;
+  const big = el('div','big'); const status = el('div','status'); const row = el('div','row'); const extra = el('div');
+  w.append(big, status, row, extra);
+  const setStatus = (t, heard) => { status.dataset.t = t; status.innerHTML = escH(t).replace('{H}', heard ? `<span class="en">${escH(heard)}</span>` : ''); };
+  const listenB = el('button','btn plain','🔊 聽'); const micB = el('button','btn red','🎤 我來唸');
+  const prevB = el('button','btn plain','◀'); const nextB = el('button','btn plain','▶');
+  prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
+  row.append(prevB, listenB, micB, nextB);
+  const lev=(a,b)=>{const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]};
+  const cur = ()=>ITEMS[i];
+  const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : speak(it.en,'en-US',0.6); };
+  function show(){
+    const it = cur(); extra.innerHTML=''; setStatus('先聽，再跟著唸');
+    if(it.t==='zy'){
+      const [, word, emo] = ZY[it.c];
+      big.innerHTML = `<div class="zybig">${it.c}</div><div class="zh">${emo} ${escH(word)}</div>`;
+    } else {
+      big.innerHTML = `<div class="emo">${it.e}</div><div class="word">${it.en}</div><div class="zh">${it.zh}</div>`;
+    }
+    setTimeout(sayCur,250);
+  }
+  async function success(){
+    addStar(); cheer(); extra.innerHTML=''; setStatus('唸得好棒！');
+    const it = cur();
+    if(it.t==='zy') await zh('好棒！'+ZY[it.c][0]); else await speak('Great job! '+it.en+'!');
+  }
+  function parentPanel(reason){
+    extra.innerHTML='';
+    const p = el('div','parent');
+    p.appendChild(el('p','', (reason ? reason+'<br>' : '') + '小朋友唸完了嗎？請爸爸媽媽評分：'));
+    const r = el('div','row');
+    const ok = el('button','btn green','⭐ 唸得很好'); const again = el('button','btn plain','再試一次');
+    ok.onclick = success; again.onclick = sayCur;
+    r.append(ok, again); p.appendChild(r); extra.appendChild(p);
+  }
+  function judge(results){
+    const it = cur();
+    const raw = Array.from(results).map(a=>a.transcript.trim());
+    if(it.t==='zy'){
+      const [s, word, , homo] = ZY[it.c];
+      const ok = raw.some(t => t.includes(it.c) || t.includes(word) || [...(homo+s)].some(h=>t.includes(h)));
+      return {ok, heard: raw[0]};
+    }
+    const alts = raw.map(t=>t.toLowerCase().replace(/[^a-z ]/g,'').trim());
+    const target = it.en;
+    const ok = alts.some(t=> t.split(' ').some(x=>x===target || (target.length>3 && lev(x,target)<=1)) || t.includes(target));
+    return {ok, heard: alts[0]};
+  }
+  listenB.onclick = sayCur;
+  prevB.onclick = ()=>{ i=(i-1+ITEMS.length)%ITEMS.length; show(); };
+  nextB.onclick = ()=>{ i=(i+1)%ITEMS.length; show(); };
+  micB.onclick = ()=>{
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR || micBlocked){ setStatus('現在請大聲唸出來！'); parentPanel(micBlocked?'':'這台裝置不支援語音辨識。'); return; }
+    try{
+      speechSynthesis.cancel();
+      rec = new SR(); rec.lang = cur().t==='zy' ? 'zh-TW' : 'en-US'; rec.interimResults=false; rec.maxAlternatives=5;
+      let got=false;
+      rec.onresult = e=>{
+        got=true;
+        const {ok, heard} = judge(e.results[0]);
+        if(ok) success();
+        else { setStatus('聽起來像「{H}」，再試一次', heard||'…'); sayCur(); }
+      };
+      rec.onerror = e=>{
+        micB.classList.remove('listening');
+        if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){ micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。'); }
+        else if(e.error==='no-speech'){ setStatus('沒聽到聲音，再大聲一點'); }
+        else { setStatus('沒聽清楚，再試一次'); }
+      };
+      rec.onend = ()=>{ micB.classList.remove('listening'); if(!got && status.dataset.t==='在聽喔…') setStatus('沒聽清楚，再試一次'); };
+      rec.start(); micB.classList.add('listening'); setStatus('在聽喔…');
+    }catch(err){ micBlocked=true; setStatus('現在請大聲唸出來！'); parentPanel('這個畫面不能使用麥克風。'); }
+  };
+  cleanup = ()=>{ try{rec&&rec.abort()}catch(e){} };
+  show();
+})}
+
+/* 3. trace letters & numbers */
+function traceGame(){ go(()=>{
+  setTitle('描一描');
+  const SETS = {
+    abc:[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+    num:[...'123456789'],
+    zy:[...'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ']
+  };
+  const HINT = {A:'apple',B:'ball',C:'cat',D:'dog',E:'egg',F:'fish',G:'goat',H:'hat',I:'ice cream',J:'juice',K:'kite',L:'lion',M:'milk',N:'nose',O:'orange',P:'pig',Q:'queen',R:'rabbit',S:'sun',T:'tree',U:'umbrella',V:'van',W:'water',X:'fox',Y:'yo-yo',Z:'zoo'};
+  // 英文、數字、注音全部混在一起隨機出題
+  const ITEMS = shuffle([...SETS.abc, ...SETS.num, ...SETS.zy]);
+  let idx = 0, done=false;
+  const w = el('div','wrap'); stage.appendChild(w);
+  const top = el('div','prompt'); const box = el('div','trace-box'); const meter = el('div','meter','<i></i>'); const row = el('div','row');
+  w.append(top, box, meter, row);
+  const guide = document.createElement('canvas'), draw = document.createElement('canvas');
+  box.append(guide, draw);
+  const mask = document.createElement('canvas');
+  const say = el('button','say','🔊'); const nameEl = el('span','en');
+  top.append(say, nameEl);
+  const prevB = el('button','btn plain','◀'), clearB = el('button','btn red',zy('擦掉')), nextB = el('button','btn plain','▶');
+  prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
+  row.append(prevB, clearB, nextB);
+  let S=300, dpr=1, pts=[], gctx, dctx;
+  const ch = ()=>ITEMS[idx];
+  const isZy = c => !!ZY[c];
+  const sayIt = ()=>{ const c=ch();
+    if(isZy(c)){ zySay(c); }
+    else speak(/\d/.test(c)? EN_NUM[+c] : (c+'. '+c+' for '+HINT[c]),'en-US',0.7); };
+  say.onclick = sayIt;
+  function size(){
+    const avail = stage.clientHeight - top.offsetHeight - meter.offsetHeight - row.offsetHeight - 80;
+    S = Math.max(220, Math.min(stage.clientWidth - 32, avail, 560));
+    box.style.width = box.style.height = S+'px';
+    dpr = window.devicePixelRatio||1;
+    [guide,draw,mask].forEach(c=>{ c.width=c.height=Math.round(S*dpr) });
+    gctx=guide.getContext('2d'); dctx=draw.getContext('2d');
+  }
+  function letterPath(ctx, fill){
+    const P = guide.width; const c = ch();
+    ctx.font = isZy(c)
+      ? `700 ${Math.round(P*0.72)}px "PingFang TC","Heiti TC","Noto Sans TC","Microsoft JhengHei",sans-serif`
+      : `600 ${Math.round(P*0.78)}px Fredoka, "PingFang TC", sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    const m = ctx.measureText(c);
+    const h = (m.actualBoundingBoxAscent||P*0.56) + (m.actualBoundingBoxDescent||0);
+    const y = P/2 + h/2 - (m.actualBoundingBoxDescent||0);
+    if(fill){ ctx.fillText(c, P/2, y) } else { ctx.strokeText(c, P/2, y) }
+  }
+  function setup(){
+    done=false; meter.firstChild.style.width='0%';
+    const c0 = ch();
+    nameEl.innerHTML = isZy(c0) ? `<span class="zyhint">${ZY[c0][2]} ${zy(ZY[c0][1])}</span>` : c0;
+    const P = guide.width;
+    gctx.clearRect(0,0,P,P);
+    gctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--guide').trim();
+    letterPath(gctx,true);
+    gctx.setLineDash([P*0.02,P*0.02]); gctx.lineWidth = P*0.008; gctx.strokeStyle='#8FA8C8'; letterPath(gctx,false); gctx.setLineDash([]);
+    const mctx = mask.getContext('2d'); mctx.clearRect(0,0,P,P); mctx.fillStyle='#000'; letterPath(mctx,true);
+    const data = mctx.getImageData(0,0,P,P).data; pts=[];
+    const step = Math.max(2, Math.round(P/45));
+    for(let y=0;y<P;y+=step) for(let x=0;x<P;x+=step){ pts.push([x,y,data[(y*P+x)*4+3]>128]) }
+    dctx.clearRect(0,0,P,P);
+  }
+  function check(){
+    const P = draw.width; const d = dctx.getImageData(0,0,P,P).data;
+    let inT=0,inC=0,outC=0,drawn=0;
+    for(const [x,y,inside] of pts){ const a=d[(y*P+x)*4+3]>0; if(inside){inT++; if(a)inC++} else if(a) outC++; if(a)drawn++; }
+    const cover = inT? inC/inT : 0; const outside = drawn? outC/drawn : 0;
+    meter.firstChild.style.width = Math.min(100, Math.round(cover/0.72*100))+'%';
+    const zyNow = isZy(ch());
+    if(!done && cover>(zyNow?0.68:0.72) && outside<(zyNow?0.6:0.45)){
+      done=true; addStar(); cheer();
+      if(zyNow) zh('好棒！'+ZY[ch()][0]);
+      else speak('Great job! '+(/\d/.test(ch())?EN_NUM[+ch()]:ch())+'!');
+      setTimeout(()=>{ if(done){ idx=(idx+1)%ITEMS.length; setup(); setTimeout(sayIt,200);} },1800);
+    }
+  }
+  let drawing=false, last=null;
+  const pos = e=>{ const r=draw.getBoundingClientRect(); return [(e.clientX-r.left)*draw.width/r.width,(e.clientY-r.top)*draw.height/r.height] };
+  draw.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; last=pos(e); try{draw.setPointerCapture(e.pointerId)}catch(_){} line(last,last); });
+  draw.addEventListener('pointermove', e=>{ if(!drawing) return; const p=pos(e); line(last,p); last=p; });
+  const up = ()=>{ if(drawing){ drawing=false; check(); } };
+  draw.addEventListener('pointerup', up); draw.addEventListener('pointercancel', up);
+  function line(a,b){ dctx.strokeStyle='#FF6A4D'; dctx.lineWidth=draw.width*0.085; dctx.lineCap='round'; dctx.lineJoin='round'; dctx.beginPath(); dctx.moveTo(a[0],a[1]); dctx.lineTo(b[0],b[1]); dctx.stroke(); }
+  clearB.onclick = ()=>{ dctx.clearRect(0,0,draw.width,draw.height); meter.firstChild.style.width='0%'; done=false; };
+  prevB.onclick = ()=>{ idx=(idx-1+ITEMS.length)%ITEMS.length; setup(); sayIt(); };
+  nextB.onclick = ()=>{ idx=(idx+1)%ITEMS.length; setup(); sayIt(); };
+  const onResize = ()=>{ size(); setup(); };
+  window.addEventListener('resize', onResize);
+  cleanup = ()=>window.removeEventListener('resize', onResize);
+  requestAnimationFrame(()=>{ size(); setup(); (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{ size(); setup(); }); setTimeout(sayIt,300); });
+})}
+
+/* 4. math: count objects (1–10) & add with numerals (sum ≤ 10) */
+function mathGame(){ go(()=>{
+  setTitle('算一算');
+  const THINGS = ['🍎','🍓','🐥','⭐','🎈','🍪','🐟','🌸'];
+  const w = el('div','wrap'); stage.appendChild(w);
+  const prompt = el('div','prompt'); const objs = el('div','objs'); const ans = el('div','answers');
+  w.append(prompt, objs, ans);
+  let n=0, locked=false, q='', mode=0;
+  function round(){
+    locked=false; mode++; objs.innerHTML='';
+    let label;
+    if(mode%2){ // count
+      const t = pick(THINGS);
+      n = 1+Math.floor(Math.random()*10);
+      for(let k=0;k<n;k++) objs.appendChild(el('span','',t));
+      q='一共有幾個？'; label=q;
+    } else { // add with numbers
+      const a=1+Math.floor(Math.random()*5), b=1+Math.floor(Math.random()*5); n=a+b;
+      objs.innerHTML = `<div class="eq">${a}<i>+</i>${b}<i>=</i><b>?</b></div>`;
+      q=`${a} 加 ${b} 等於多少？`; label='加起來是多少？';
+    }
+    prompt.innerHTML = `<span>${zy(label)}</span>`;
+    const s=el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick=()=>zh(q); prompt.prepend(s);
+    const set = new Set([n]); while(set.size<3){ const v=n+Math.floor(Math.random()*5)-2; if(v>=1&&v<=10) set.add(v) }
+    ans.innerHTML='';
+    shuffle([...set]).forEach(v=>{
+      const b = el('button','num',v);
+      b.onclick = async ()=>{
+        if(locked) return;
+        if(v===n){
+          locked=true; b.classList.add('ok');
+          const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = n;
+          addStar(); cheer('答對了！'); await zh('答對了！'); await speak(EN_NUM[n]+'!'); setTimeout(round,500);
+        }
+        else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); zh(mode%2?'再數數看':'再算算看'); }
+      };
+      ans.appendChild(b);
+    });
+    setTimeout(()=>zh(q),300);
+  }
+  round();
+})}
+
+home();
+</script>
+
+</body>
+
+</html>
