@@ -457,8 +457,8 @@ function traceGame(){ go(()=>{
   const guide = document.createElement('canvas'), draw = document.createElement('canvas');
   box.append(guide, draw);
   const mask = document.createElement('canvas');
-  const say = el('button','say','🔊'); const nameEl = el('span','en');
-  top.append(say, nameEl);
+  const sayBtn = el('button','say','🔊'); const nameEl = el('span','en');
+  top.append(sayBtn, nameEl);
   const prevB = el('button','btn plain','◀'), clearB = el('button','btn red',zy('擦掉')), nextB = el('button','btn plain','▶');
   prevB.setAttribute('aria-label','上一個'); nextB.setAttribute('aria-label','下一個');
   row.append(prevB, clearB, nextB);
@@ -468,7 +468,7 @@ function traceGame(){ go(()=>{
   const sayIt = ()=>{ const c=ch();
     if(isZy(c)){ zySay(c); }
     else if(/\d/.test(c)) say(EN_NUM[+c]); else say(c, HINT[c]); };
-  say.onclick = sayIt;
+  sayBtn.onclick = sayIt;
   function size(){
     const avail = stage.clientHeight - top.offsetHeight - meter.offsetHeight - row.offsetHeight - 80;
     S = Math.max(220, Math.min(stage.clientWidth - 32, avail, 560));
