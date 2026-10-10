@@ -143,19 +143,32 @@ function cheer(t){ const b=$('#cheerTxt'); b.innerHTML=zy(t||pick(['棒！','好
 let voices=[];
 function loadVoices(){ try{ voices = speechSynthesis.getVoices() }catch(e){} }
 if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+/* iOS 只允許「手指點擊當下」發出第一句語音：第一次觸碰時先唸一句靜音的，解鎖語音 */
+let speechUnlocked = false;
+function unlockSpeech(){
+  if(speechUnlocked || !('speechSynthesis' in window)) return;
+  speechUnlocked = true;
+  try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch(e){}
+}
+['touchend','pointerdown','click'].forEach(t=>document.addEventListener(t, unlockSpeech, {capture:true, passive:true}));
 function speak(text, lang='en-US', rate=0.8){
   return new Promise(res=>{
     if(!('speechSynthesis' in window)) return res();
     try{
-      speechSynthesis.cancel();
+      const ss = speechSynthesis;
+      const busy = ss.speaking || ss.pending;
+      if(busy) ss.cancel();
+      try{ ss.resume() }catch(e){}
+      if(!voices.length) loadVoices();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang; u.rate = rate; u.pitch = 1.1;
       const norm = v => v.lang.replace('_','-');
       const v = voices.find(v=>norm(v)===lang) || voices.find(v=>norm(v).startsWith(lang.slice(0,2)));
       if(v) u.voice = v;
       let done=false; const fin=()=>{ if(!done){done=true;res()} };
-      u.onend=fin; u.onerror=fin; setTimeout(fin, 5000);
-      speechSynthesis.speak(u);
+      u.onend=fin; u.onerror=fin; setTimeout(fin, 6000);
+      // iOS Safari 在 cancel() 後立刻 speak() 有時會被吞掉，稍等一下再唸
+      if(busy) setTimeout(()=>ss.speak(u), 120); else ss.speak(u);
     }catch(e){ res() }
   });
 }
@@ -173,7 +186,7 @@ const ICON = {
 function setTitle(t){ $('#title').innerHTML=zy(t) }
 $('#homeBtn').onclick = home;
 let cleanup = null;
-function go(fn){ if(cleanup){cleanup();cleanup=null} try{speechSynthesis.cancel()}catch(e){} stage.innerHTML=''; fn(); stage.scrollTop=0; }
+function go(fn){ if(cleanup){cleanup();cleanup=null} stage.innerHTML=''; fn(); stage.scrollTop=0; }
 
 function home(){ go(()=>{
   setTitle('小星星樂園');
@@ -181,7 +194,7 @@ function home(){ go(()=>{
   [['t1','listen','聽一聽','Listen',listenGame],['t2','repeat','跟我唸','Say it',repeatGame],
    ['t3','trace','描一描','Trace',traceGame],['t4','math','算一算','Count',mathGame]].forEach(([c,ic,zhT,en,fn])=>{
     const b = el('button','tile '+c, ICON[ic]+`<b>${zy(zhT)}</b><small>${en}</small>`);
-    b.onclick = ()=>{ zh(zhT); fn(); };
+    b.onclick = ()=>{ fn(); };
     g.appendChild(b);
   });
   stage.appendChild(g);
@@ -472,5 +485,4 @@ home();
 </script>
 
 </body>
-
 </html>
