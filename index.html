@@ -176,7 +176,17 @@ function speak(text, lang='en-US', rate=0.8){
     }catch(e){ res() }
   });
 }
-const zh = (t, r=0.9) => speak(t,'zh-TW',r);
+const zh = (t, r=0.9) => { sayToken++; return speak(t,'zh-TW',r); };
+/* 中英混唸：say('找出','bird') → 「找出」用中文、「bird」用英文，依序唸。新的一句會打斷舊的 */
+let sayToken = 0;
+const isEn = t => /^[A-Za-z0-9 .,!?'-]+$/.test(t);
+async function say(...parts){
+  const my = ++sayToken;
+  for(const p of parts){
+    if(my !== sayToken) return;
+    if(isEn(p)) await speak(p,'en-US',0.7); else await speak(p,'zh-TW',0.9);
+  }
+}
 
 /* 聲音測試：一個嗶聲（測喇叭）＋一句語音（測語音合成），結果直接顯示在畫面上 */
 function soundTest(logEl){
@@ -278,8 +288,8 @@ function listenGame(){ go(()=>{
       label = '哪一個注音？';
     } else {
       opts = shuffle(WORDS).slice(0,3); target = pick(opts);
-      sayTarget = ()=>speak('Find the '+target.en);
-      sayOpt = o => speak('This is a '+o.en+'.');
+      sayTarget = ()=>say('找出', target.en);
+      sayOpt = o => say('這是', o.en);
       label = `找出 <span class="en">${target.en}</span>`;
     }
     prompt.innerHTML = `<span>${label}</span>`;
@@ -293,7 +303,7 @@ function listenGame(){ go(()=>{
         if(locked) return;
         if(o===target){
           locked=true; c.classList.add('ok'); addStar(); cheer();
-          if(zyRound) await zySay(o); else await speak('Yes! '+o.en+'!');
+          if(zyRound) await zySay(o); else await say('對了！', o.en);
           setTimeout(round,500);
         } else { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); await sayOpt(o); sayTarget(); }
       };
@@ -333,7 +343,7 @@ function repeatGame(){ go(()=>{
   async function success(){
     addStar(); cheer(); extra.innerHTML=''; setStatus('唸得好棒！');
     const it = cur();
-    if(it.t==='zy') await zh('好棒！'+ZY[it.c][0]); else await speak('Great job! '+it.en+'!');
+    if(it.t==='zy') await zh('好棒！'+ZY[it.c][0]); else await say('好棒！', it.en);
   }
   function parentPanel(reason){
     extra.innerHTML='';
@@ -415,7 +425,7 @@ function traceGame(){ go(()=>{
   const isZy = c => !!ZY[c];
   const sayIt = ()=>{ const c=ch();
     if(isZy(c)){ zySay(c); }
-    else speak(/\d/.test(c)? EN_NUM[+c] : (c+'. '+c+' for '+HINT[c]),'en-US',0.7); };
+    else if(/\d/.test(c)) say(EN_NUM[+c]); else say(c, HINT[c]); };
   say.onclick = sayIt;
   function size(){
     const avail = stage.clientHeight - top.offsetHeight - meter.offsetHeight - row.offsetHeight - 80;
@@ -461,7 +471,7 @@ function traceGame(){ go(()=>{
     if(!done && cover>(zyNow?0.68:0.72) && outside<(zyNow?0.6:0.45)){
       done=true; addStar(); cheer();
       if(zyNow) zh('好棒！'+ZY[ch()][0]);
-      else speak('Great job! '+(/\d/.test(ch())?EN_NUM[+ch()]:ch())+'!');
+      else say('好棒！', /\d/.test(ch())?EN_NUM[+ch()]:ch());
       setTimeout(()=>{ if(done){ idx=(idx+1)%ITEMS.length; setup(); setTimeout(sayIt,200);} },1800);
     }
   }
@@ -513,7 +523,7 @@ function mathGame(){ go(()=>{
         if(v===n){
           locked=true; b.classList.add('ok');
           const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = n;
-          addStar(); cheer('答對了！'); await zh('答對了！'); await speak(EN_NUM[n]+'!'); setTimeout(round,500);
+          addStar(); cheer('答對了！'); await say('答對了！', EN_NUM[n]); setTimeout(round,500);
         }
         else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); zh(mode%2?'再數數看':'再算算看'); }
       };
