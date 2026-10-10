@@ -187,12 +187,13 @@ const capped = (p, ms=3000) => Promise.race([p, sleep(ms)]);
 const zh = (t, r=0.9) => { sayToken++; return speak(t,'zh-TW',r); };
 /* 中英混唸：say('找出','bird') → 「找出」用中文、「bird」用英文，依序唸。新的一句會打斷舊的 */
 let sayToken = 0;
+const EN_RATE = 0.5;   // 英文唸慢一點，給五歲小朋友聽
 const isEn = t => /^[A-Za-z0-9 .,!?'-]+$/.test(t);
 async function say(...parts){
   const my = ++sayToken;
   for(const p of parts){
     if(my !== sayToken) return;
-    if(isEn(p)) await speak(p,'en-US',0.7); else await speak(p,'zh-TW',0.9);
+    if(isEn(p)) await speak(p,'en-US',EN_RATE); else await speak(p,'zh-TW',0.9);
   }
 }
 
@@ -333,7 +334,7 @@ function listenGame(){ go(()=>{
       label = '哪一個注音？';
     } else {
       opts = shuffle(WORDS).slice(0,3); target = pick(opts);
-      sayTarget = ()=>say('找出', target.en, target.en, target.en);
+      sayTarget = ()=>say('找出', `${target.en}. ${target.en}. ${target.en}.`);
       sayOpt = o => say('這是', o.en);
       label = `找出 <span class="en">${target.en}</span>`;
     }
@@ -374,7 +375,7 @@ function repeatGame(){ go(()=>{
   row.append(prevB, listenB, micB, nextB);
   const lev=(a,b)=>{const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]};
   const cur = ()=>ITEMS[i];
-  const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : speak(it.en,'en-US',0.6); };
+  const sayCur = ()=>{ const it=cur(); return it.t==='zy' ? zySay(it.c) : speak(it.en,'en-US',EN_RATE); };
   let show = function(){
     const it = cur(); extra.innerHTML=''; setStatus('先聽，再跟著唸');
     if(it.t==='zy'){
