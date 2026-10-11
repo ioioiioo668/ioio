@@ -116,6 +116,28 @@ button:focus-visible,select:focus-visible{outline:4px solid var(--berry);outline
 #pop b{font-size:28px}
 @keyframes spin{0%{transform:scale(.2) rotate(-40deg)}70%{transform:scale(1.15) rotate(8deg)}100%{transform:scale(1)}}
 
+/* sticker shop */
+.shop{background:var(--card);border-radius:24px;padding:14px 16px;box-shadow:0 5px 0 var(--line);display:flex;flex-direction:column;gap:10px}
+.shophead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:20px}
+.bal{font-size:17px;color:var(--soft)} .bal b{color:var(--tomato);font-size:24px}
+.rewards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.reward{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;border:2px solid var(--line);border-radius:18px;padding:12px 10px;opacity:.75}
+.reward.can{border-color:var(--leaf);background:#F0FBF5;opacity:1}
+.reward .re{font-size:44px;line-height:1} .reward .rn{font-size:17px;font-weight:700;overflow-wrap:anywhere} .reward .rc{color:var(--soft);font-size:15px} .reward .btn{align-self:stretch}
+.hist summary{cursor:pointer;color:var(--soft);font-size:15px;padding:4px 0}
+.hrow{display:flex;justify-content:space-between;gap:8px;font-size:15px;padding:4px 0;border-top:1px solid var(--ground)}
+.hrow span{color:var(--soft)}
+.gateq{font-family:var(--display);font-size:40px;font-weight:700}
+.gatein{font-size:28px;width:140px;text-align:center;padding:8px;border-radius:14px;border:2px solid var(--line);color:var(--ink);background:var(--card)}
+#pop .sub{color:var(--soft);font-size:15px}
+.answers.four{grid-template-columns:repeat(4,1fr)} .answers.two{grid-template-columns:repeat(2,1fr)}
+@media (max-width:420px){.answers.four{grid-template-columns:repeat(2,1fr)}}
+.num[disabled]{opacity:.35}
+.rlist{display:flex;flex-direction:column;gap:8px}
+.redit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.redit input{font-size:16px;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.re-emoji{width:3.2em;text-align:center} .re-name{flex:1;min-width:8em} .re-cost{width:4.5em}
+
 /* parent settings */
 .set{max-width:760px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 .sec{background:var(--card);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 0 var(--line)}
@@ -210,15 +232,15 @@ const stickerCount = () => Math.min(STICKERS.length, Math.floor(stars / PER_STIC
 function renderStars(){ $('#starN').textContent = stars; }
 renderStars();
 function addStar(){
-  const before = stickerCount();
   stars++; lsSet('stars', stars); renderStars();
   const b = $('#starBtn'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
-  if(stickerCount() > before) setTimeout(()=>showSticker(STICKERS[stickerCount()-1]), 1100);
+  const e = Math.floor(stars / PER_STICKER);
+  if(e > Math.floor((stars-1) / PER_STICKER)) setTimeout(()=>showSticker(STICKERS[(e-1) % STICKERS.length]), 1100);
 }
 function showSticker(s){
   const pop = $('#pop');
   pop.innerHTML = '';
-  const card = el('div','card', `<div class="sticker">${s}</div><b>得到新貼紙！</b><div class="sub">放進貼紙本了</div>`);
+  const card = el('div','card', `<div class="sticker">${s}</div><b>得到新貼紙！</b><div class="sub">可以放進貼紙本，也可以拿去換獎品</div>`);
   const ok = el('button','btn green','好棒！');
   let release; popWait = new Promise(r=>release=r);
   ok.onclick = ()=>{ pop.hidden = true; popWait = null; release(); };
@@ -436,7 +458,7 @@ function home(){ go(()=>{
     b.onclick = fn; g.appendChild(b);
   });
   const n = stickerCount();
-  const bar = el('button','bookbar', `<span class="bk">📒</span><span><b>貼紙本</b><span class="sub">已收集 ${n} / ${STICKERS.length} 張${n<STICKERS.length ? `・再 ${PER_STICKER - stars % PER_STICKER} 顆星換下一張` : '・全部收集完了！'}</span></span><span class="mini">${STICKERS.slice(0,n).slice(-6).join('')}</span>`);
+  const bar = el('button','bookbar', `<span class="bk">📒</span><span><b>貼紙本・換獎品</b><span class="sub">可以換獎品的貼紙：${balance()} 張・再 ${PER_STICKER - stars % PER_STICKER} 顆星拿下一張</span></span><span class="mini">${STICKERS.slice(0,n).slice(-6).join('')}</span>`);
   bar.onclick = stickerBook;
   const pl = el('button','parentlink','⚙ 爸媽設定（聲音、錄注音）');
   pl.onclick = settings;
@@ -915,57 +937,184 @@ function traceGame(){ go(()=>{
   requestAnimationFrame(()=>{ size(); setup(); setTimeout(startItem, 300); });
 })}
 
-/* ============ 4. 算一算 ============ */
+/* ============ 4. 算一算（會升級） ============ */
+// 連續答對 3 題升一級，連續答錯 2 題降一級；級數會記住
+const MATH_LEVELS = [
+  {name:'第 1 級', note:'數到 10、10 以內加法', kinds:['count10','add10']},
+  {name:'第 2 級', note:'數到 15、10 以內加減', kinds:['count15','add10','sub5','sub10']},
+  {name:'第 3 級', note:'15 以內加減、填空', kinds:['add15','sub10','miss10','compare20']},
+  {name:'第 4 級', note:'20 以內加減、規律', kinds:['add20','sub15','miss15','seq','compare20']},
+  {name:'第 5 級', note:'20 以內、連加連減', kinds:['add20','sub20','miss20','seq','three']}
+];
+const rnd = (a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function makeMathQ(kind){
+  const T = ['🍎','🍓','🐥','⭐','🎈','🍪','🐟','🌸'];
+  const eq = (parts)=>`<div class="eq">${parts.map(p=> p==='?' ? '<b>?</b>' : /[+\-−=]/.test(p) ? `<i>${p}</i>` : p).join('')}</div>`;
+  switch(kind){
+    case 'count10': case 'count15': {
+      const n = rnd(kind==='count10'?3:8, kind==='count10'?10:15), t = pick(T);
+      return {ans:n, label:'一共有幾個？', speak:'一共有幾個？', html: Array.from({length:n},()=>`<span>${t}</span>`).join(''), max:20};
+    }
+    case 'add10': case 'add15': case 'add20': {
+      const top = {add10:10, add15:15, add20:20}[kind];
+      const s = rnd(Math.min(5, top), top), a = rnd(1, s-1), b = s-a;
+      return {ans:s, label:'加起來是多少？', speak:`${a} 加 ${b} 等於多少？`, html:eq([a,'+',b,'=','?']), max:top};
+    }
+    case 'sub5': case 'sub10': case 'sub15': case 'sub20': {
+      const top = {sub5:5, sub10:10, sub15:15, sub20:20}[kind];
+      const a = rnd(Math.min(3, top), top), b = rnd(1, a-1);
+      return {ans:a-b, label:'減掉以後剩多少？', speak:`${a} 減 ${b} 等於多少？`, html:eq([a,'−',b,'=','?']), max:top};
+    }
+    case 'miss10': case 'miss15': case 'miss20': {
+      const top = {miss10:10, miss15:15, miss20:20}[kind];
+      const s = rnd(4, top), a = rnd(1, s-1), b = s-a;
+      return Math.random()<.5
+        ? {ans:b, label:'問號是多少？', speak:`${a} 加多少，等於 ${s}？`, html:eq([a,'+','?','=',s]), max:top}
+        : {ans:a, label:'問號是多少？', speak:`多少加 ${b}，等於 ${s}？`, html:eq(['?','+',b,'=',s]), max:top};
+    }
+    case 'compare20': {
+      const a = rnd(1, 20); let b = rnd(1, 20); while(b===a) b = rnd(1,20);
+      const big = Math.random()<.5;
+      return {ans: big ? Math.max(a,b) : Math.min(a,b), choices:[a,b], label: big ? '哪一個比較大？' : '哪一個比較小？',
+        speak: big ? `${a} 和 ${b}，哪一個比較大？` : `${a} 和 ${b}，哪一個比較小？`, html:`<div class="eq">${a}<i>和</i>${b}</div>`, max:20};
+    }
+    case 'seq': {
+      const step = pick([1,2,2,5]), down = step<=2 && Math.random()<.3;
+      let start = down ? rnd(step*3+1, 20) : (step===5 ? pick([0,5]) : rnd(0, 20-step*3));
+      const arr = [0,1,2,3].map(k=> down ? start - k*step : start + k*step);
+      return {ans:arr[3], label:'下一個是多少？', speak:`${arr.slice(0,3).join('，')}，下一個是多少？`,
+        html:`<div class="eq">${arr.slice(0,3).join('<i>,</i>')}<i>,</i><b>?</b></div>`, max: Math.max(20, arr[3]+3)};
+    }
+    case 'three': {
+      const a = rnd(1,8), b = rnd(1,8), c = rnd(1, 6), plus = Math.random()<.5 || a+b-c<0;
+      const ans = plus ? a+b+c : a+b-c;
+      if(ans>20) return makeMathQ('three');
+      return {ans, label:'算算看', speak:`${a} 加 ${b} ${plus?'加':'減'} ${c} 等於多少？`, html:eq([a,'+',b, plus?'+':'−', c,'=','?']), max:20};
+    }
+  }
+}
 function mathGame(){ go(()=>{
   setTitle('算一算');
-  const THINGS = ['🍎','🍓','🐥','⭐','🎈','🍪','🐟','🌸'];
   const w = el('div','wrap'); stage.appendChild(w);
-  const prompt = el('div','prompt'); const objs = el('div','objs'); const ans = el('div','answers');
-  w.append(prompt, objs, ans);
-  let n=0, locked=false, q='', mode=0;
+  const chip = el('div','chip'); const prompt = el('div','prompt'); const objs = el('div','objs'); const ans = el('div','answers');
+  w.append(chip, prompt, objs, ans);
+  let level = Math.min(MATH_LEVELS.length-1, Math.max(0, lsGet('mathLevel', 0)|0));
+  let streak = 0, wrongStreak = 0, locked = false, q = null, missedThis = false;
+  const showChip = ()=>{ chip.textContent = `${MATH_LEVELS[level].name}・${MATH_LEVELS[level].note}`; };
   function round(){
-    locked=false; mode++; objs.innerHTML='';
-    let label;
-    if(mode%2){
-      const t = pick(THINGS); n = 1+Math.floor(Math.random()*10);
-      for(let k=0;k<n;k++) objs.appendChild(el('span','',t));
-      q='一共有幾個？'; label=q;
-    } else {
-      const a=1+Math.floor(Math.random()*5), b=1+Math.floor(Math.random()*5); n=a+b;
-      objs.innerHTML = `<div class="eq">${a}<i>+</i>${b}<i>=</i><b>?</b></div>`;
-      q=`${a} 加 ${b} 等於多少？`; label='加起來是多少？';
+    locked = false; missedThis = false; showChip();
+    q = makeMathQ(pick(MATH_LEVELS[level].kinds)); window.__mathQ = q;   // 給測試用
+    objs.innerHTML = q.html;
+    prompt.innerHTML = `<span>${q.label}</span>`;
+    const s = el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick = ()=>zh(q.speak); prompt.prepend(s);
+    let opts = q.choices;
+    if(!opts){
+      const set = new Set([q.ans]); let guard = 0;
+      while(set.size < 4 && guard++ < 50){ const v = q.ans + pick([-3,-2,-1,1,2,3,10,-10].filter(d=>Math.abs(d)<10 || q.ans>=10)); if(v>=0 && v<=q.max+3) set.add(v); }
+      opts = shuffle([...set]);
     }
-    prompt.innerHTML = `<span>${label}</span>`;
-    const s=el('button','say','🔊'); s.setAttribute('aria-label','再聽一次'); s.onclick=()=>zh(q); prompt.prepend(s);
-    const set = new Set([n]); while(set.size<3){ const v=n+Math.floor(Math.random()*5)-2; if(v>=1&&v<=10) set.add(v) }
-    ans.innerHTML='';
-    shuffle([...set]).forEach(v=>{
+    ans.className = 'answers' + (opts.length===2 ? ' two' : opts.length===4 ? ' four' : '');
+    ans.innerHTML = '';
+    opts.forEach(v=>{
       const b = el('button','num',v);
       b.onclick = async ()=>{
         if(locked) return;
-        if(v===n){
-          locked=true; b.classList.add('ok');
-          const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = n;
+        if(v===q.ans){
+          locked = true; b.classList.add('ok');
+          const qm = objs.querySelector('.eq b'); if(qm) qm.textContent = q.ans;
           addStar(); cheer('答對了！');
-          await capped(say('答對了！', EN_NUM[n]+'.'), 7000); setTimeout(round,500);
+          if(!missedThis){ streak++; wrongStreak = 0; } else streak = 0;
+          let up = false;
+          if(streak >= 3 && level < MATH_LEVELS.length-1){ level++; streak = 0; up = true; lsSet('mathLevel', level); }
+          await capped(up ? say('答對了！', '升級了！現在是'+MATH_LEVELS[level].name) : say('答對了！', (q.ans<=10?EN_NUM[q.ans]+'.':String(q.ans))), 7000);
+          setTimeout(round, 500);
+        } else {
+          b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); b.disabled = true;
+          if(!missedThis){ missedThis = true; wrongStreak++; streak = 0; }
+          if(wrongStreak >= 2 && level > 0){ level--; wrongStreak = 0; lsSet('mathLevel', level); showChip(); }
+          zh('再想想看');
         }
-        else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); zh(mode%2?'再數數看':'再算算看'); }
       };
       ans.appendChild(b);
     });
-    setTimeout(()=>zh(q),300);
+    setTimeout(()=>zh(q.speak), 300);
   }
   round();
 })}
 
-/* ============ 貼紙本 ============ */
+/* ============ 貼紙本與兌換 ============ */
+const DEFAULT_REWARDS = [
+  {id:'r1', emoji:'📺', name:'看卡通 10 分鐘', cost:2},
+  {id:'r2', emoji:'🍦', name:'吃一支冰淇淋', cost:3},
+  {id:'r3', emoji:'🏞️', name:'去公園玩', cost:5},
+  {id:'r4', emoji:'🧸', name:'一個小玩具', cost:10}
+];
+let rewards = lsGet('rewards', null) || DEFAULT_REWARDS.map(r=>({...r}));
+const saveRewards = ()=> lsSet('rewards', rewards);
+let spent = lsGet('spent', 0) | 0;
+let redeemLog = lsGet('redeemLog', []);
+const earnedStickers = () => Math.floor(stars / PER_STICKER);
+const balance = () => Math.max(0, earnedStickers() - spent);
+
+// 爸媽確認：出一題小朋友還不會的加法
+function parentGate(title){
+  return new Promise(res=>{
+    const pop = $('#pop'); pop.innerHTML = '';
+    const a = rnd(12, 39), b = rnd(12, 39);
+    const card = el('div','card');
+    card.innerHTML = `<b style="font-size:22px">${escH(title)}</b><div class="sub">請爸爸媽媽回答：</div><div class="gateq">${a} + ${b} = ?</div>`;
+    const input = document.createElement('input'); input.id='gate-input'; input.type='text'; input.inputMode='numeric'; input.autocomplete='off'; input.className='gatein';
+    const msg = el('div','sub gatemsg','');
+    const row = el('div','row');
+    const ok = el('button','btn green','確認'); const no = el('button','btn plain','取消');
+    const close = v=>{ pop.hidden = true; pop.innerHTML=''; res(v); };
+    ok.onclick = ()=>{ if(+input.value.trim() === a+b) close(true); else { msg.textContent = '答案不對喔'; input.value=''; input.focus(); } };
+    no.onclick = ()=>close(false);
+    input.addEventListener('keydown', e=>{ if(e.key==='Enter') ok.click(); });
+    row.append(no, ok); card.append(input, msg, row); pop.appendChild(card); pop.hidden = false;
+    setTimeout(()=>{ try{ input.focus() }catch(e){} }, 50);
+  });
+}
 function stickerBook(){ go(()=>{
   setTitle('貼紙本');
   const w = el('div','wrap'); stage.appendChild(w);
   const n = stickerCount(), left = PER_STICKER - stars % PER_STICKER;
   const head = el('div','bookhead');
-  head.innerHTML = `<b>已收集 ${n} / ${STICKERS.length} 張</b>` +
-    (n < STICKERS.length ? `<div>⭐ 再 ${left} 顆星，就能換下一張貼紙</div><div class="meter"><i style="width:${(stars%PER_STICKER)/PER_STICKER*100}%"></i></div>` : '<div>全部收集完了！你好厲害！</div>');
+  head.innerHTML = `<b>已收集 ${n} / ${STICKERS.length} 種貼紙</b><div>⭐ 再 ${left} 顆星，就能拿到下一張貼紙</div><div class="meter"><i style="width:${(stars%PER_STICKER)/PER_STICKER*100}%"></i></div>`;
+  // 兌換區
+  const shop = el('div','shop');
+  const bal = balance();
+  shop.innerHTML = `<div class="shophead"><b>🎁 兌換獎品</b><span class="bal">可以用 <b>${bal}</b> 張貼紙</span></div>`;
+  const list = el('div','rewards');
+  if(!rewards.length) list.appendChild(el('p','sub','還沒有獎品。請爸爸媽媽到「⚙ 爸媽設定」新增。'));
+  rewards.forEach(r=>{
+    const can = bal >= r.cost;
+    const card = el('div','reward' + (can ? ' can' : ''));
+    card.innerHTML = `<span class="re">${escH(r.emoji||'🎁')}</span><span class="rn">${escH(r.name)}</span><span class="rc">${r.cost} 張</span>`;
+    const btn = el('button', 'btn small ' + (can ? 'green' : 'plain'), can ? '兌換' : `還差 ${r.cost - bal} 張`);
+    btn.disabled = !can;
+    btn.onclick = async ()=>{
+      stopTalking();
+      const ok = await parentGate(`要用 ${r.cost} 張貼紙換「${r.name}」嗎？`);
+      if(!ok) return;
+      if(balance() < r.cost) return;
+      spent += r.cost; lsSet('spent', spent);
+      redeemLog.unshift({emoji:r.emoji, name:r.name, cost:r.cost, at:new Date().toISOString()});
+      redeemLog = redeemLog.slice(0, 50); lsSet('redeemLog', redeemLog);
+      cheer('換到了！');
+      sayNow(`換到了！${r.name}`);
+      stickerBook();
+    };
+    card.appendChild(btn); list.appendChild(card);
+  });
+  shop.appendChild(list);
+  if(redeemLog.length){
+    const hist = el('details','hist');
+    hist.innerHTML = `<summary>換過的獎品（${redeemLog.length}）</summary>` +
+      redeemLog.slice(0,10).map(h=>`<div class="hrow">${escH(h.emoji||'🎁')} ${escH(h.name)}<span>${h.cost} 張・${new Date(h.at).toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})}</span></div>`).join('');
+    shop.appendChild(hist);
+  }
+  // 收集冊
   const book = el('div','book');
   STICKERS.forEach((s,k)=>{
     const c = el('button', k<n ? 'stk' : 'stk lock', k<n ? s : '?');
@@ -973,8 +1122,8 @@ function stickerBook(){ go(()=>{
     if(k<n) c.onclick = ()=>{ c.animate([{transform:'scale(1)'},{transform:'scale(1.3) rotate(-8deg)'},{transform:'scale(1)'}],{duration:500}); };
     book.appendChild(c);
   });
-  w.append(head, book);
-  zh(n ? `你有 ${n} 張貼紙` : '答對題目就能拿到星星，五顆星換一張貼紙');
+  w.append(head, shop, el('div','chip','📒 我的收集冊'), book);
+  zh(bal ? `你有 ${bal} 張貼紙可以換獎品` : '答對題目就能拿到星星，五顆星換一張貼紙');
 })}
 
 /* ============ 爸媽錄音：清單、格子、一個一個錄 ============ */
@@ -1113,13 +1262,38 @@ function settings(){ go(()=>{
   });
   w.appendChild(s3);
 
+  // 兌換獎品設定
+  const s5 = el('div','sec','<h2>兌換獎品</h2><p>每 5 顆星拿到 1 張貼紙。小朋友在貼紙本裡用貼紙換獎品，換的時候要爸媽回答一題加法確認。下面是範例，可以自己改。</p>');
+  const rlist = el('div','rlist');
+  const drawR = ()=>{
+    rlist.innerHTML = '';
+    rewards.forEach((r,k)=>{
+      const row = el('div','redit');
+      const e = document.createElement('input'); e.id='rw-e-'+r.id; e.value=r.emoji||''; e.className='re-emoji'; e.setAttribute('aria-label','圖示');
+      const n = document.createElement('input'); n.id='rw-n-'+r.id; n.value=r.name; n.className='re-name'; n.setAttribute('aria-label','獎品名稱');
+      const c = document.createElement('input'); c.id='rw-c-'+r.id; c.type='number'; c.min='1'; c.max='99'; c.value=r.cost; c.className='re-cost'; c.setAttribute('aria-label','需要幾張');
+      const unit = el('span','sub','張');
+      const del = el('button','btn plain small','刪除');
+      e.onchange = ()=>{ r.emoji = e.value.trim().slice(0,4) || '🎁'; saveRewards(); };
+      n.onchange = ()=>{ r.name = n.value.trim() || '獎品'; saveRewards(); };
+      c.onchange = ()=>{ r.cost = Math.max(1, Math.min(99, parseInt(c.value,10)||1)); c.value=r.cost; saveRewards(); };
+      del.onclick = ()=>{ rewards.splice(k,1); saveRewards(); drawR(); };
+      row.append(e, n, c, unit, del); rlist.appendChild(row);
+    });
+  };
+  drawR();
+  const addR = el('button','btn small green','＋ 新增獎品');
+  addR.onclick = ()=>{ rewards.push({id:'r'+Date.now(), emoji:'🎁', name:'新的獎品', cost:5}); saveRewards(); drawR(); };
+  s5.append(rlist, addR);
+  w.appendChild(s5);
+
   // 進度
-  const s4 = el('div','sec', `<h2>進度</h2><p>星星 ${stars} 顆，貼紙 ${stickerCount()} 張。</p>`);
+  const s4 = el('div','sec', `<h2>進度</h2><p>星星 ${stars} 顆，拿到貼紙 ${earnedStickers()} 張（已兌換用掉 ${spent} 張，剩 ${balance()} 張）。算一算目前在${MATH_LEVELS[Math.min(MATH_LEVELS.length-1, lsGet('mathLevel',0)|0)].name}。</p>`);
   const reset = el('button','btn plain small','把星星和貼紙歸零');
   let armed = false;
   reset.onclick = ()=>{
     if(!armed){ armed=true; reset.textContent='確定要歸零嗎？再按一次'; setTimeout(()=>{ armed=false; reset.textContent='把星星和貼紙歸零'; }, 4000); return; }
-    stars=0; lsSet('stars',0); renderStars(); s4.querySelector('p').textContent='星星 0 顆，貼紙 0 張。'; reset.textContent='已歸零'; armed=false;
+    stars=0; lsSet('stars',0); spent=0; lsSet('spent',0); redeemLog=[]; lsSet('redeemLog',[]); renderStars(); s4.querySelector('p').textContent='星星 0 顆，貼紙 0 張。'; reset.textContent='已歸零'; armed=false;
   };
   s4.appendChild(reset);
   w.appendChild(s4);
