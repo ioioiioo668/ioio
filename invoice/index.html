@@ -384,6 +384,24 @@ function maybeFinish() {
   if (!fresh.length) { show(''); return; }
   fresh.forEach(inv => Object.assign(inv, vote(inv.runs)));
   files = []; drawQueue();
+  applySellers(fresh).finally(() => finishUI(fresh));
+}
+
+/* 用賣方統編查以前確認過的廠商名稱(統編比公司名稱好認) */
+async function applySellers(list) {
+  const ids = [...new Set(list.map(x => x.final.sellerTaxId).filter(t => /^\d{8}$/.test(t || '')))];
+  if (!ids.length) return;
+  show('比對廠商資料…');
+  try {
+    const map = await run('lookupSellers', ids);
+    list.forEach(inv => {
+      const n = map[inv.final.sellerTaxId];
+      if (n) { inv.final.seller = n; inv.unresolved = inv.unresolved.filter(k => k !== 'seller'); inv.sellerFromBook = true; }
+    });
+  } catch (e) { /* 查不到就照原本結果 */ }
+}
+
+function finishUI(fresh) {
   render();
   const need = fresh.filter(x => x.unresolved.length).length;
   show('完成:這批 ' + fresh.length + ' 張,畫面上共 ' + invoices.length + ' 張待儲存。' +
