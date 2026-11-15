@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="發票掃描">
+<meta name="robots" content="noindex">
+<title>發票掃描</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root { --accent:#0a7c66; --bg:#f5f6f4; --line:#d9dcd8; --bad:#c0392b; --warn:#fff2b3; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:16px 16px 60px; background:var(--bg); color:#1d2420;
+         font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif; font-size:16px; }
+  h1 { font-size:20px; margin:4px 0 14px; }
+  h2 { font-size:16px; margin:24px 2px 8px; }
+  .btn { display:block; width:100%; padding:15px; border:0; border-radius:14px; font-size:17px;
+         font-weight:600; background:var(--accent); color:#fff; text-align:center; }
+  .btn.ghost { background:#fff; color:var(--accent); border:1.5px solid var(--accent); }
+  .btn:disabled { opacity:.45; }
+  .pickwrap { position:relative; }
+  .pickwrap input { position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:16px; }
+  .hint { color:#5b655f; font-size:13px; line-height:1.5; margin:8px 2px 0; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:14px; }
+  #status { margin-top:14px; padding:12px; border-radius:10px; background:#fff; border:1px solid var(--line); display:none; white-space:pre-line; }
+  #status.err { border-color:var(--bad); color:var(--bad); }
+  #queue { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  #queue .q { position:relative; width:72px; height:92px; border-radius:8px; overflow:hidden; border:1px solid var(--line);
+              background:#eee center/cover no-repeat; font-size:11px; display:flex; align-items:flex-end; }
+  #queue .q span { background:rgba(0,0,0,.55); color:#fff; width:100%; padding:2px 4px; }
+  #queue .q b { position:absolute; top:2px; right:4px; color:#fff; background:rgba(0,0,0,.55); border-radius:9px; padding:0 6px; }
+  .inv h3 { margin:0 0 8px; font-size:15px; display:flex; justify-content:space-between; gap:8px; }
+  .inv .thumb { width:100%; max-height:200px; object-fit:contain; background:#f0f0f0; border-radius:8px; }
+  .tag { font-size:12px; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+  .tag.ok { background:#d7efdc; color:#1f6b3a; } .tag.no { background:var(--warn); color:#7a5b00; }
+  .f { margin-top:10px; }
+  .f label { display:block; font-size:12px; color:#5b655f; margin-bottom:3px; }
+  input, select { width:100%; padding:10px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#fff; font-family:inherit; }
+  input.need { background:var(--warn); border-color:#d4a800; }
+  .runs { font-size:12px; color:#5b655f; margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
+  .runs .x { color:var(--bad); }
+  .row2 { display:flex; gap:10px; } .row2 > div { flex:1; }
+  .item { background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+          display:flex; justify-content:space-between; font-size:14px; }
+  .item a, .link { color:var(--accent); text-decoration:none; }
+  .muted { color:#5b655f; font-size:13px; }
+  #cam { position:fixed; inset:0; background:#000; z-index:50; display:none; flex-direction:column; }
+  #cam video { flex:1; width:100%; object-fit:cover; min-height:0; }
+  #cam .bar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 30px; gap:12px; }
+  #cam .bar button { border:0; border-radius:12px; padding:12px 16px; font-size:16px; font-weight:600; }
+  #shutter { width:76px; height:76px; border-radius:50% !important; background:#fff; border:5px solid #9ad3c4 !important; padding:0 !important; }
+  #camDone { background:var(--accent); color:#fff; } #camCancel { background:#333; color:#fff; }
+  #camCount { position:absolute; top:16px; left:16px; color:#fff; background:rgba(0,0,0,.6); padding:6px 12px; border-radius:16px; font-size:15px; }
+  #camThumbs { position:absolute; top:16px; right:12px; display:flex; flex-direction:column; gap:4px; }
+  #camThumbs img { width:44px; height:58px; object-fit:cover; border:2px solid #fff; border-radius:4px; }
+  #flash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity .15s; }
+  #saveBar { position:sticky; bottom:0; padding:10px 0; background:var(--bg); display:none; }
+</style>
+</head>
+<body>
+<h1 style="display:flex;justify-content:space-between;align-items:center">發票掃描(三重辨識)
+  <a href="#" id="cfgLink" class="link" style="font-size:13px;font-weight:400">設定</a></h1>
+
+<div class="card" id="cfg" style="margin-top:0;display:none">
+  <label class="muted">Apps Script 網址(/exec 結尾)</label>
+  <input id="cfgApi" placeholder="https://script.google.com/macros/s/…/exec">
+  <label class="muted" style="margin-top:10px;display:block">密碼</label>
+  <input id="cfgKey">
+  <button class="btn" id="cfgSave" style="margin-top:12px">儲存設定</button>
+</div>
+
+<div class="card" style="margin-top:0">
+  <button class="btn" id="camBtn">📷 連續拍照</button>
+  <p class="hint">在這頁直接開相機:換一張發票,<b>點一下大圓鈕</b>就拍好,可以一直拍。全部拍完按「完成」,自動開始辨識。
+    每張發票自動辨識 3 次,影像不留存。</p>
+  <div class="pickwrap" style="margin-top:12px">
+    <div class="btn ghost" id="pickBtn">從照片/檔案選擇(可多選)</div>
+    <input id="file" type="file" accept="application/pdf,image/*" multiple>
+  </div>
+  <div id="queue"></div>
+  <button class="btn" id="go" style="display:none" disabled>開始辨識</button>
+</div>
+
+<div id="status"></div>
+<div id="cam">
+  <video id="video" playsinline muted autoplay></video>
+  <div id="flash"></div>
+  <div id="camCount">已拍 0 張</div>
+  <div id="camThumbs"></div>
+  <div class="bar">
+    <button id="camCancel">取消</button>
+    <button id="shutter" aria-label="拍照"></button>
+    <button id="camDone">完成</button>
+  </div>
+</div>
+<div id="results"></div>
+<div id="saveBar"><button class="btn" id="save">全部儲存到試算表(新分頁)</button></div>
+
+<h2>最近的批次</h2>
+<div id="recent"><div class="muted">載入中…</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+/* ---------- 連線設定:網址與密碼存在這支手機;也可用連結 #api=…&key=… 帶入 ---------- */
+const CFG = (() => {
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem('invoiceCfg') || '{}'); } catch (e) {}
+  if (!c.api) c.api = 'https://script.google.com/macros/s/AKfycbyvtxoXEewm2uYZxInL4kfwtdMvsR5hTfFkJUWwbUgTGd7mtnUyBS_osVZ_LuLTptQk/exec';
+  const hp = new URLSearchParams(location.hash.slice(1));
+  if (hp.get('api')) c.api = hp.get('api');
+  if (hp.get('key')) c.key = hp.get('key');
+  if (hp.get('api') || hp.get('key')) {
+    try { localStorage.setItem('invoiceCfg', JSON.stringify(c)); } catch (e) {}
+    history.replaceState(null, '', location.pathname);   // 把密碼從網址列拿掉
+  }
+  return c;
+})();
+function openCfg() { $('cfgApi').value = CFG.api || ''; $('cfgKey').value = CFG.key || ''; $('cfg').style.display = 'block'; }
+$('cfgLink').onclick = e => { e.preventDefault(); openCfg(); };
+$('cfgSave').onclick = () => {
+  CFG.api = $('cfgApi').value.trim(); CFG.key = $('cfgKey').value.trim();
+  try { localStorage.setItem('invoiceCfg', JSON.stringify(CFG)); } catch (e) {}
+  $('cfg').style.display = 'none'; show('設定已儲存'); loadRecent();
+};
+
+async function run(fn, ...args) {
+  if (!CFG.api || !CFG.key) { openCfg(); throw new Error('請先填寫 Apps Script 網址與密碼'); }
+  const res = await fetch(CFG.api, { method: 'POST', body: JSON.stringify({ key: CFG.key, fn, args }) });
+  let j;
+  try { j = await res.json(); } catch (e) { throw new Error('伺服器回應不是 JSON(請確認部署存取權是「任何人」,且已部署新版本)'); }
+  if (!j.ok) throw new Error(j.error);
+  return j.result;
+}
+
+const FIELDS = [['date','發票日期','date'],['invoiceNo','發票號碼','text'],['seller','賣方名稱','text'],
+  ['sellerTaxId','賣方統編','text'],['buyerTaxId','買方統編','text'],
+  ['net','未稅金額','text'],['tax','稅額','text'],['total','總計','text']];
+const NUM = ['net','tax','total'];
+const RUNS = 3;
+
+let files = [];     // 使用者加入的原始檔案
+let invoices = [];  // 每張發票 {name, img(dataURL), runs[], final{}, unresolved[]}
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function show(msg, isErr) {
+  const s = $('status'); s.style.display = msg ? 'block' : 'none';
+  s.textContent = msg || ''; s.className = isErr ? 'err' : '';
+}
+
+/* ---------- 加入檔案 ---------- */
+$('file').onchange = e => {
+  files = Array.from(e.target.files || []);
+  e.target.value = '';
+  drawQueue();
+  if (files.length) $('go').onclick();   // 選完自動開始辨識
+};
+function drawQueue() {
+  const q = $('queue'); q.innerHTML = '';
+  files.forEach((f, i) => {
+    const d = document.createElement('div'); d.className = 'q';
+    if (f.type.startsWith('image/')) d.style.backgroundImage = 'url(' + URL.createObjectURL(f) + ')';
+    const sp = document.createElement('span'); sp.textContent = /pdf/i.test(f.type) ? 'PDF' : '照片';
+    const x = document.createElement('b'); x.textContent = '×';
+    x.onclick = () => { files.splice(i, 1); drawQueue(); };
+    d.append(sp, x); q.appendChild(d);
+  });
+  $('go').disabled = !files.length;
+}
+
+/* ---------- 檔案 → 一張張頁面 canvas ---------- */
+async function toCanvases(file) {
+  if (/pdf/i.test(file.type) || /\.pdf$/i.test(file.name)) {
+    if (!window.pdfjsLib) throw new Error('PDF 元件載入失敗,請改用照片');
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const out = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const vp0 = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: Math.min(3, 2000 / Math.max(vp0.width, vp0.height)) });
+      const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      out.push({ canvas: c, name: file.name + ' 第' + p + '頁' });
+    }
+    return out;
+  }
+  const url = URL.createObjectURL(file);
+  const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
+  const sc = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  URL.revokeObjectURL(url);
+  return [{ canvas: c, name: file.name }];
+}
+
+/* ---------- 三種影像處理:原圖 / 灰階加強對比 / 黑白二值化 ---------- */
+function variants(src) {
+  const w = src.width, h = src.height;
+  const base = src.getContext('2d').getImageData(0, 0, w, h);
+  const gray = new Uint8ClampedArray(w * h);
+  let lo = 255, hi = 0; const hist = new Array(256).fill(0);
+  for (let i = 0; i < w * h; i++) {
+    const g = Math.round(base.data[i*4] * .299 + base.data[i*4+1] * .587 + base.data[i*4+2] * .114);
+    gray[i] = g; hist[g]++; if (g < lo) lo = g; if (g > hi) hi = g;
+  }
+  // Otsu 門檻
+  let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+  let sB = 0, wB = 0, best = 0, th = 128;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t]; if (!wB) continue; const wF = w*h - wB; if (!wF) break;
+    sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
+    if (v > best) { best = v; th = t; }
+  }
+  const mk = fn => {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'), d = ctx.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) { const v = fn(gray[i]); d.data[i*4] = d.data[i*4+1] = d.data[i*4+2] = v; d.data[i*4+3] = 255; }
+    ctx.putImageData(d, 0, 0); return c;
+  };
+  const span = Math.max(1, hi - lo);
+  return [src, mk(g => (g - lo) * 255 / span), mk(g => g > th ? 255 : 0)]
+    .map(c => c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+}
+
+/* ---------- 多數決 ---------- */
+const norm = (k, v) => {
+  v = String(v == null ? '' : v).trim();
+  if (v === '') return '';
+  if (NUM.includes(k)) { const n = Number(v.replace(/[,\s$NT元]/g, '')); return isNaN(n) ? v : String(n); }
+  return v.replace(/\s/g, '').toUpperCase();
+};
+function vote(runs) {
+  const final = {}, unresolved = [];
+  FIELDS.forEach(([k]) => {
+    const cnt = {};
+    runs.forEach(r => { const n = norm(k, r[k]); if (n !== '') (cnt[n] = cnt[n] || []).push(r[k]); });
+    const winner = Object.values(cnt).find(a => a.length >= 2);
+    if (winner) final[k] = String(winner[0]).trim();
+    else { final[k] = ''; if (Object.keys(cnt).length) unresolved.push(k); }
+  });
+  return { final, unresolved };
+}
+
+/* ---------- 開始辨識 ---------- */
+$('go').onclick = async () => {
+  try {
+    show('準備影像中…');
+    const pages = [];
+    for (const f of files) pages.push(...await toCanvases(f));
+    await recognize(pages);
+  } catch (e) { show('失敗:' + (e.message || e), true); }
+};
+
+async function recognize(pages) {
+  $('file').disabled = true; $('camBtn').disabled = true; $('saveBar').style.display = 'none';
+  const offset = invoices.length;  // 未儲存的上一批保留,這批接在後面
+  try {
+    const jobs = [];
+    pages.forEach((p, i) => {
+      const inv = { name: p.name, img: p.canvas.toDataURL('image/jpeg', 0.6), runs: new Array(RUNS) };
+      invoices.push(inv);
+      variants(p.canvas).forEach((b64, v) => jobs.push({ i: offset + i, v, b64 }));
+    });
+    let done = 0, errs = 0;
+    const total = jobs.length;
+    const worker = async () => {
+      while (jobs.length) {
+        const j = jobs.shift();
+        try {
+          const r = await run('extractFromFile', { mimeType: 'image/jpeg', base64: j.b64 });
+          if (r.error) errs++;
+          invoices[j.i].runs[j.v] = r.fields || {};
+        } catch (e) { errs++; invoices[j.i].runs[j.v] = {}; }
+        done++;
+        show('辨識中… ' + done + ' / ' + total + '(' + (invoices.length - offset) + ' 張發票 × ' + RUNS + ' 次)');
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    invoices.slice(offset).forEach(inv => Object.assign(inv, vote(inv.runs)));
+    files = []; drawQueue();
+    render();
+    const need = invoices.slice(offset).filter(x => x.unresolved.length).length;
+    show('完成:這批 ' + (invoices.length - offset) + ' 張,畫面上共 ' + invoices.length + ' 張待儲存。' + (need ? need + ' 張有欄位三次都不同(黃色),請對照發票填寫。' : '全部欄位都有共識。') +
+         (errs ? '\n有 ' + errs + ' 次辨識失敗,該組視為空白。' : ''), !!errs);
+    $('saveBar').style.display = 'block';
+  } catch (e) {
+    show('失敗:' + (e.message || e), true);
+  } finally {
+    $('file').disabled = false; $('camBtn').disabled = false;
+  }
+}
+
+/* ---------- 網頁內連續拍照 ---------- */
+let stream = null, shots = [];
+$('camBtn').onclick = async () => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    show('這個瀏覽器不支援網頁相機,請用下方「從照片/檔案選擇」。', true); return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: false,
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 } } });
+  } catch (e) {
+    show('無法開啟相機(' + (e.name || e.message || e) + ')。若剛剛按了「不允許」,請重新整理再試;仍不行請用下方「從照片/檔案選擇」。', true);
+    return;
+  }
+  shots = []; $('camThumbs').innerHTML = ''; $('camCount').textContent = '已拍 0 張';
+  $('video').srcObject = stream; $('cam').style.display = 'flex';
+  try { await $('video').play(); } catch (e) {}
+};
+$('shutter').onclick = () => {
+  const v = $('video');
+  if (!v.videoWidth) return;
+  const sc = Math.min(1, 2000 / Math.max(v.videoWidth, v.videoHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  shots.push({ canvas: c, name: '拍照 ' + (shots.length + 1) });
+  $('camCount').textContent = '已拍 ' + shots.length + ' 張';
+  const t = document.createElement('img'); t.src = c.toDataURL('image/jpeg', 0.3);
+  const th = $('camThumbs'); th.prepend(t); while (th.children.length > 4) th.lastChild.remove();
+  const f = $('flash'); f.style.opacity = '.8'; setTimeout(() => f.style.opacity = '0', 120);
+  if (navigator.vibrate) navigator.vibrate(30);
+};
+function closeCam() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null; $('video').srcObject = null; $('cam').style.display = 'none';
+}
+$('camCancel').onclick = () => { closeCam(); shots = []; };
+$('camDone').onclick = () => {
+  const pages = shots; shots = []; closeCam();
+  if (pages.length) recognize(pages);
+};
+
+function render() {
+  const box = $('results'); box.innerHTML = '';
+  invoices.forEach((inv, n) => {
+    const card = document.createElement('div'); card.className = 'card inv';
+    const ok = !inv.unresolved.length;
+    card.innerHTML = `<h3><span>#${n+1} ${esc(inv.name)}</span><span class="tag ${ok?'ok':'no'}">${ok?'有共識':'需確認'}</span></h3>
+      <img class="thumb" src="${inv.img}" alt="">` +
+      FIELDS.map(([k, l, t]) => {
+        const fin = norm(k, inv.final[k]);
+        const runs = inv.runs.map((r, i) => {
+          const v = r[k] == null ? '' : String(r[k]);
+          const x = fin !== '' && norm(k, v) !== fin;
+          return `<span class="${x?'x':''}">${'①②③'[i]} ${esc(v) || '—'}</span>`;
+        }).join('');
+        return `<div class="f"><label>${l}(正確)</label>
+          <input data-n="${n}" data-k="${k}" type="${t}" value="${esc(inv.final[k])}" class="${inv.unresolved.includes(k)?'need':''}"
+            ${NUM.includes(k)?'inputmode="decimal"':''}>
+          <div class="runs">${runs}</div></div>`;
+      }).join('') +
+      `<div class="row2 f"><div><label>類別</label><select data-n="${n}" data-k="category">
+        <option value="">(不分類)</option><option>餐飲</option><option>交通</option><option>辦公用品</option>
+        <option>通訊</option><option>水電</option><option>其他</option></select></div>
+        <div><label>備註</label><input data-n="${n}" data-k="note"></div></div>`;
+    box.appendChild(card);
+    card.querySelector('select[data-k]').value = inv.category || '';
+    card.querySelector('input[data-k="note"]').value = inv.note || '';
+  });
+  box.querySelectorAll('[data-k]').forEach(el => el.addEventListener('input', () => {
+    const inv = invoices[el.dataset.n], k = el.dataset.k;
+    if (k === 'category' || k === 'note') { inv[k] = el.value; return; }
+    inv.final[k] = el.value;
+    if (el.value.trim()) { el.classList.remove('need'); inv.unresolved = inv.unresolved.filter(x => x !== k); }
+  }));
+  box.querySelectorAll('select[data-k]').forEach(el => el.addEventListener('change', () => invoices[el.dataset.n].category = el.value));
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- 儲存 ---------- */
+$('save').onclick = async () => {
+  $('save').disabled = true;
+  try {
+    show('儲存中…');
+    const payload = invoices.map(inv => ({ name: inv.name, runs: inv.runs, final: inv.final,
+      unresolved: inv.unresolved, category: inv.category || '', note: inv.note || '' }));
+    const r = await run('saveBatch', payload);
+    show('✅ 已存到分頁「' + r.sheet + '」:' + r.count + ' 張' + (r.needCheck ? ',其中 ' + r.needCheck + ' 張標記需人工確認' : ''));
+    files = []; invoices = []; drawQueue();
+    $('results').innerHTML = ''; $('saveBar').style.display = 'none';
+    loadRecent();
+  } catch (e) { show('儲存失敗:' + (e.message || e), true); }
+  finally { $('save').disabled = false; }
+};
+
+async function loadRecent() {
+  try {
+    const r = await run('listBatches');
+    const box = $('recent'); box.innerHTML = r.items.length ? '' : '<div class="muted">還沒有紀錄</div>';
+    r.items.forEach(it => {
+      const d = document.createElement('div'); d.className = 'item';
+      const a = document.createElement('a'); a.href = it.url; a.target = '_blank'; a.textContent = it.name;
+      const c = document.createElement('span'); c.className = 'muted'; c.textContent = it.count + ' 張';
+      d.append(a, c); box.appendChild(d);
+    });
+  } catch (e) { $('recent').innerHTML = '<div class="muted">讀取失敗:' + esc(e.message || e) + '</div>'; }
+}
+
+loadRecent();
+</script>
+</body>
+</html>
