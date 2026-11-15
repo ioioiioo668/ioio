@@ -265,15 +265,31 @@ $('go').onclick = async () => {
 const MAX_WORKERS = 6;
 let queue = [], active = 0, total = 0, doneCnt = 0, errCnt = 0, thirdCnt = 0, batchStart = 0, camOpen = false;
 
+function rotate(src, deg) {
+  if (!deg) return src;
+  const c = document.createElement('canvas');
+  c.width = src.height; c.height = src.width;
+  const ctx = c.getContext('2d');
+  ctx.translate(c.width / 2, c.height / 2);
+  ctx.rotate(deg * Math.PI / 180);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
+}
+
+/* 讀到幾個重要欄位,用來判斷照片方向對不對 */
+const score = f => ['invoiceNo','sellerTaxId','buyerTaxId','date','total','seller']
+  .filter(k => f && f[k] != null && String(f[k]).trim() !== '').length;
+const ROTS = [0, 90, 270];
+
 function enqueue(pages) {
   if (!active && !queue.length) { batchStart = invoices.length; total = doneCnt = errCnt = thirdCnt = 0; }
   $('saveBar').style.display = 'none';
   pages.forEach(p => {
-    const vs = variants(p.canvas);
-    // 先辨識兩次(原圖、加強對比);第三種(黑白)先留著,兩次不一致才用
-    const inv = { name: p.name, img: p.canvas.toDataURL('image/jpeg', 0.5), runs: new Array(2), b3: vs[2] };
+    // 第 1 次先用原圖;讀不太到東西就把照片轉 90°、270° 再試,選讀得最好的方向
+    const inv = { name: p.name, canvas: p.canvas, img: p.canvas.toDataURL('image/jpeg', 0.5),
+                  runs: new Array(2), texts: [], tries: [] };
     const idx = invoices.push(inv) - 1;
-    queue.push({ idx, v: 0, b64: vs[0] }, { idx, v: 1, b64: vs[1] });
+    queue.push({ idx, v: 0, rot: 0, b64: variants(p.canvas)[0] });
     total += 2;
   });
   progress();
@@ -285,10 +301,31 @@ function pump() {
     const j = queue.shift();
     active++;
     run('extractFromFile', { mimeType: 'image/jpeg', base64: j.b64 })
-      .then(r => { if (r.error) errCnt++; invoices[j.idx].runs[j.v] = r.fields || {}; })
-      .catch(() => { errCnt++; invoices[j.idx].runs[j.v] = {}; })
+      .then(r => { if (r.error) errCnt++; onResult(j, r.fields || {}, r.text || r.error || ''); })
+      .catch(e => { errCnt++; onResult(j, {}, String(e.message || e)); })
       .finally(() => { active--; doneCnt++; checkPair(j.idx); progress(); pump(); maybeFinish(); });
   }
+}
+
+function onResult(j, fields, text) {
+  const inv = invoices[j.idx];
+  if (inv.cancelled) return;
+  if (j.v !== 0) { inv.runs[j.v] = fields; inv.texts[j.v] = text; return; }
+  inv.tries.push({ rot: j.rot, fields, text });
+  const next = ROTS[ROTS.indexOf(j.rot) + 1];
+  if (score(fields) < 2 && next !== undefined) {           // 方向可能不對,轉一下再試
+    queue.push({ idx: j.idx, v: 0, rot: next, b64: variants(rotate(inv.canvas, next))[0] });
+    total++;
+    return;
+  }
+  const best = inv.tries.slice().sort((x, y) => score(y.fields) - score(x.fields))[0];
+  inv.rot = best.rot; inv.runs[0] = best.fields; inv.texts[0] = best.text;
+  const c = rotate(inv.canvas, best.rot);
+  if (best.rot) inv.img = c.toDataURL('image/jpeg', 0.5);
+  const vs = variants(c);
+  inv.b3 = vs[2];
+  queue.push({ idx: j.idx, v: 1, rot: best.rot, b64: vs[1] });   // 第 2 次用同一個方向
+  delete inv.canvas;
 }
 
 /* 兩次都回來後比對:全部欄位一致就結束;有不同才排第三次 */
@@ -390,6 +427,9 @@ function render() {
             ${NUM.includes(k)?'inputmode="decimal"':''}>
           <div class="runs">${runs}</div></div>`;
       }).join('') +
+      `<details class="f"><summary class="hint">辨識原文${inv.rot ? '(照片已自動轉 ' + inv.rot + '°)' : ''}</summary>` +
+        (inv.texts || []).map((t, i) => t ? `<div class="hint" style="margin-top:6px">${'①②③'[i]}</div><pre style="white-space:pre-wrap;font-size:12px;margin:2px 0 0;background:#f6f7f6;padding:8px;border-radius:8px">${esc(t)}</pre>` : '').join('') +
+      `</details>` +
       `<div class="row2 f"><div><label>類別</label><select data-n="${n}" data-k="category">
         <option value="">(不分類)</option><option>餐飲</option><option>交通</option><option>辦公用品</option>
         <option>通訊</option><option>水電</option><option>其他</option></select></div>
