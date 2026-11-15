@@ -228,7 +228,11 @@ function variants(src) {
     ctx.putImageData(d, 0, 0); return c;
   };
   const span = Math.max(1, hi - lo);
-  return [src, mk(g => (g - lo) * 255 / span), mk(g => g > th ? 255 : 0)]
+  // ② 加強對比 + 去透字:比墨水門檻淡的(背面透上來的字、紙紋)一律變白,深色的字保留灰階
+  const ghostCut = th - 12;
+  return [src,
+          mk(g => g >= ghostCut ? 255 : Math.max(0, (g - lo) * 255 / Math.max(1, ghostCut - lo) * 0.85)),
+          mk(g => g > th ? 255 : 0)]
     .map(c => c.toDataURL('image/jpeg', 0.8).split(',')[1]);
 }
 
