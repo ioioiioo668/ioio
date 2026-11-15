@@ -73,7 +73,7 @@
 <div class="card" style="margin-top:0">
   <button class="btn" id="camBtn">📷 連續拍照</button>
   <p class="hint">在這頁直接開相機:換一張發票,<b>點一下大圓鈕</b>就拍好,可以一直拍。拍下的同時就在背景辨識,按「完成」後通常只要等最後幾張。
-    每張發票自動辨識 3 次,影像不留存。</p>
+    每張發票先辨識 2 次,兩次不一致才辨識第 3 次。影像不留存。</p>
   <div class="pickwrap" style="margin-top:12px">
     <div class="btn ghost" id="pickBtn">從照片/檔案選擇(可多選)</div>
     <input id="file" type="file" accept="application/pdf,image/*" multiple>
@@ -239,7 +239,7 @@ function vote(runs) {
   FIELDS.forEach(([k]) => {
     const cnt = {};
     runs.forEach(r => { const n = norm(k, r[k]); if (n !== '') (cnt[n] = cnt[n] || []).push(r[k]); });
-    const winner = Object.values(cnt).find(a => a.length >= 2);
+    const winner = Object.values(cnt).find(a => a.length >= 2);   // 兩組相同即採用(兩次或三次皆適用)
     if (winner) final[k] = String(winner[0]).trim();
     else { final[k] = ''; if (Object.keys(cnt).length) unresolved.push(k); }
   });
@@ -258,16 +258,18 @@ $('go').onclick = async () => {
 
 /* ---------- 辨識佇列:拍一張就馬上在背景辨識,同時最多 MAX_WORKERS 個請求 ---------- */
 const MAX_WORKERS = 6;
-let queue = [], active = 0, total = 0, doneCnt = 0, errCnt = 0, batchStart = 0, camOpen = false;
+let queue = [], active = 0, total = 0, doneCnt = 0, errCnt = 0, thirdCnt = 0, batchStart = 0, camOpen = false;
 
 function enqueue(pages) {
-  if (!active && !queue.length) { batchStart = invoices.length; total = doneCnt = errCnt = 0; }
+  if (!active && !queue.length) { batchStart = invoices.length; total = doneCnt = errCnt = thirdCnt = 0; }
   $('saveBar').style.display = 'none';
   pages.forEach(p => {
-    const inv = { name: p.name, img: p.canvas.toDataURL('image/jpeg', 0.5), runs: new Array(RUNS) };
+    const vs = variants(p.canvas);
+    // 先辨識兩次(原圖、加強對比);第三種(黑白)先留著,兩次不一致才用
+    const inv = { name: p.name, img: p.canvas.toDataURL('image/jpeg', 0.5), runs: new Array(2), b3: vs[2] };
     const idx = invoices.push(inv) - 1;
-    variants(p.canvas).forEach((b64, v) => queue.push({ idx, v, b64 }));
-    total += RUNS;
+    queue.push({ idx, v: 0, b64: vs[0] }, { idx, v: 1, b64: vs[1] });
+    total += 2;
   });
   progress();
   pump();
@@ -280,14 +282,24 @@ function pump() {
     run('extractFromFile', { mimeType: 'image/jpeg', base64: j.b64 })
       .then(r => { if (r.error) errCnt++; invoices[j.idx].runs[j.v] = r.fields || {}; })
       .catch(() => { errCnt++; invoices[j.idx].runs[j.v] = {}; })
-      .finally(() => { active--; doneCnt++; progress(); pump(); maybeFinish(); });
+      .finally(() => { active--; doneCnt++; checkPair(j.idx); progress(); pump(); maybeFinish(); });
   }
+}
+
+/* 兩次都回來後比對:全部欄位一致就結束;有不同才排第三次 */
+function checkPair(idx) {
+  const inv = invoices[idx];
+  if (inv.checked || inv.cancelled || !inv.runs[0] || !inv.runs[1]) return;
+  inv.checked = true;
+  const same = FIELDS.every(([k]) => norm(k, inv.runs[0][k]) === norm(k, inv.runs[1][k]));
+  if (!same) { queue.push({ idx, v: 2, b64: inv.b3 }); total++; thirdCnt++; }
+  delete inv.b3;
 }
 
 function progress() {
   const t = '辨識中 ' + doneCnt + ' / ' + total;
   if (camOpen) $('camProg').textContent = t;
-  else if (total) show(t + '(' + (invoices.length - batchStart) + ' 張 × ' + RUNS + ' 次)');
+  else if (total) show(t + '(' + (invoices.length - batchStart) + ' 張,每張 2 次,不一致的加第 3 次)');
 }
 
 function maybeFinish() {
@@ -300,10 +312,11 @@ function maybeFinish() {
   render();
   const need = fresh.filter(x => x.unresolved.length).length;
   show('完成:這批 ' + fresh.length + ' 張,畫面上共 ' + invoices.length + ' 張待儲存。' +
+       (thirdCnt ? thirdCnt + ' 張兩次不一致,已加辨識第 3 次。' : '每張兩次都一致。') +
        (need ? need + ' 張有欄位三次都不同(黃色),請對照發票填寫。' : '全部欄位都有共識。') +
        (errCnt ? '\n有 ' + errCnt + ' 次辨識失敗,該組視為空白。' : ''), !!errCnt);
   $('saveBar').style.display = 'block';
-  total = doneCnt = errCnt = 0;
+  total = doneCnt = errCnt = thirdCnt = 0;
 }
 
 async function recognize(pages) { enqueue(pages); }
