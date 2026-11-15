@@ -72,7 +72,7 @@
 
 <div class="card" style="margin-top:0">
   <button class="btn" id="camBtn">📷 連續拍照</button>
-  <p class="hint">在這頁直接開相機:換一張發票,<b>點一下大圓鈕</b>就拍好,可以一直拍。全部拍完按「完成」,自動開始辨識。
+  <p class="hint">在這頁直接開相機:換一張發票,<b>點一下大圓鈕</b>就拍好,可以一直拍。拍下的同時就在背景辨識,按「完成」後通常只要等最後幾張。
     每張發票自動辨識 3 次,影像不留存。</p>
   <div class="pickwrap" style="margin-top:12px">
     <div class="btn ghost" id="pickBtn">從照片/檔案選擇(可多選)</div>
@@ -87,6 +87,7 @@
   <video id="video" playsinline muted autoplay></video>
   <div id="flash"></div>
   <div id="camCount">已拍 0 張</div>
+  <div id="camProg" style="position:absolute;top:52px;left:16px;color:#fff;background:rgba(0,0,0,.6);padding:4px 10px;border-radius:12px;font-size:13px"></div>
   <div id="camThumbs"></div>
   <div class="bar">
     <button id="camCancel">取消</button>
@@ -170,6 +171,7 @@ function drawQueue() {
   $('go').disabled = !files.length;
 }
 
+const MAX_SIDE = 1600;
 /* ---------- 檔案 → 一張張頁面 canvas ---------- */
 async function toCanvases(file) {
   if (/pdf/i.test(file.type) || /\.pdf$/i.test(file.name)) {
@@ -179,7 +181,7 @@ async function toCanvases(file) {
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
       const vp0 = page.getViewport({ scale: 1 });
-      const vp = page.getViewport({ scale: Math.min(3, 2000 / Math.max(vp0.width, vp0.height)) });
+      const vp = page.getViewport({ scale: Math.min(3, MAX_SIDE / Math.max(vp0.width, vp0.height)) });
       const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
       await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
       out.push({ canvas: c, name: file.name + ' 第' + p + '頁' });
@@ -188,7 +190,7 @@ async function toCanvases(file) {
   }
   const url = URL.createObjectURL(file);
   const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
-  const sc = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+  const sc = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
   const c = document.createElement('canvas');
   c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
@@ -222,7 +224,7 @@ function variants(src) {
   };
   const span = Math.max(1, hi - lo);
   return [src, mk(g => (g - lo) * 255 / span), mk(g => g > th ? 255 : 0)]
-    .map(c => c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+    .map(c => c.toDataURL('image/jpeg', 0.8).split(',')[1]);
 }
 
 /* ---------- 多數決 ---------- */
@@ -250,51 +252,64 @@ $('go').onclick = async () => {
     show('準備影像中…');
     const pages = [];
     for (const f of files) pages.push(...await toCanvases(f));
-    await recognize(pages);
+    recognize(pages);
   } catch (e) { show('失敗:' + (e.message || e), true); }
 };
 
-async function recognize(pages) {
-  $('file').disabled = true; $('camBtn').disabled = true; $('saveBar').style.display = 'none';
-  const offset = invoices.length;  // 未儲存的上一批保留,這批接在後面
-  try {
-    const jobs = [];
-    pages.forEach((p, i) => {
-      const inv = { name: p.name, img: p.canvas.toDataURL('image/jpeg', 0.6), runs: new Array(RUNS) };
-      invoices.push(inv);
-      variants(p.canvas).forEach((b64, v) => jobs.push({ i: offset + i, v, b64 }));
-    });
-    let done = 0, errs = 0;
-    const total = jobs.length;
-    const worker = async () => {
-      while (jobs.length) {
-        const j = jobs.shift();
-        try {
-          const r = await run('extractFromFile', { mimeType: 'image/jpeg', base64: j.b64 });
-          if (r.error) errs++;
-          invoices[j.i].runs[j.v] = r.fields || {};
-        } catch (e) { errs++; invoices[j.i].runs[j.v] = {}; }
-        done++;
-        show('辨識中… ' + done + ' / ' + total + '(' + (invoices.length - offset) + ' 張發票 × ' + RUNS + ' 次)');
-      }
-    };
-    await Promise.all([worker(), worker(), worker()]);
-    invoices.slice(offset).forEach(inv => Object.assign(inv, vote(inv.runs)));
-    files = []; drawQueue();
-    render();
-    const need = invoices.slice(offset).filter(x => x.unresolved.length).length;
-    show('完成:這批 ' + (invoices.length - offset) + ' 張,畫面上共 ' + invoices.length + ' 張待儲存。' + (need ? need + ' 張有欄位三次都不同(黃色),請對照發票填寫。' : '全部欄位都有共識。') +
-         (errs ? '\n有 ' + errs + ' 次辨識失敗,該組視為空白。' : ''), !!errs);
-    $('saveBar').style.display = 'block';
-  } catch (e) {
-    show('失敗:' + (e.message || e), true);
-  } finally {
-    $('file').disabled = false; $('camBtn').disabled = false;
+/* ---------- 辨識佇列:拍一張就馬上在背景辨識,同時最多 MAX_WORKERS 個請求 ---------- */
+const MAX_WORKERS = 6;
+let queue = [], active = 0, total = 0, doneCnt = 0, errCnt = 0, batchStart = 0, camOpen = false;
+
+function enqueue(pages) {
+  if (!active && !queue.length) { batchStart = invoices.length; total = doneCnt = errCnt = 0; }
+  $('saveBar').style.display = 'none';
+  pages.forEach(p => {
+    const inv = { name: p.name, img: p.canvas.toDataURL('image/jpeg', 0.5), runs: new Array(RUNS) };
+    const idx = invoices.push(inv) - 1;
+    variants(p.canvas).forEach((b64, v) => queue.push({ idx, v, b64 }));
+    total += RUNS;
+  });
+  progress();
+  pump();
+}
+
+function pump() {
+  while (active < MAX_WORKERS && queue.length) {
+    const j = queue.shift();
+    active++;
+    run('extractFromFile', { mimeType: 'image/jpeg', base64: j.b64 })
+      .then(r => { if (r.error) errCnt++; invoices[j.idx].runs[j.v] = r.fields || {}; })
+      .catch(() => { errCnt++; invoices[j.idx].runs[j.v] = {}; })
+      .finally(() => { active--; doneCnt++; progress(); pump(); maybeFinish(); });
   }
 }
 
+function progress() {
+  const t = '辨識中 ' + doneCnt + ' / ' + total;
+  if (camOpen) $('camProg').textContent = t;
+  else if (total) show(t + '(' + (invoices.length - batchStart) + ' 張 × ' + RUNS + ' 次)');
+}
+
+function maybeFinish() {
+  if (active || queue.length || camOpen) return;
+  invoices = invoices.filter(x => !x.cancelled);
+  const fresh = invoices.slice(batchStart);
+  if (!fresh.length) { show(''); return; }
+  fresh.forEach(inv => Object.assign(inv, vote(inv.runs)));
+  files = []; drawQueue();
+  render();
+  const need = fresh.filter(x => x.unresolved.length).length;
+  show('完成:這批 ' + fresh.length + ' 張,畫面上共 ' + invoices.length + ' 張待儲存。' +
+       (need ? need + ' 張有欄位三次都不同(黃色),請對照發票填寫。' : '全部欄位都有共識。') +
+       (errCnt ? '\n有 ' + errCnt + ' 次辨識失敗,該組視為空白。' : ''), !!errCnt);
+  $('saveBar').style.display = 'block';
+  total = doneCnt = errCnt = 0;
+}
+
+async function recognize(pages) { enqueue(pages); }
+
 /* ---------- 網頁內連續拍照 ---------- */
-let stream = null, shots = [];
+let stream = null, camFrom = 0, shotCnt = 0;
 $('camBtn').onclick = async () => {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     show('這個瀏覽器不支援網頁相機,請用下方「從照片/檔案選擇」。', true); return;
@@ -306,33 +321,37 @@ $('camBtn').onclick = async () => {
     show('無法開啟相機(' + (e.name || e.message || e) + ')。若剛剛按了「不允許」,請重新整理再試;仍不行請用下方「從照片/檔案選擇」。', true);
     return;
   }
-  shots = []; $('camThumbs').innerHTML = ''; $('camCount').textContent = '已拍 0 張';
+  camOpen = true; camFrom = invoices.length; shotCnt = 0;
+  $('camThumbs').innerHTML = ''; $('camCount').textContent = '已拍 0 張'; $('camProg').textContent = '';
   $('video').srcObject = stream; $('cam').style.display = 'flex';
   try { await $('video').play(); } catch (e) {}
 };
 $('shutter').onclick = () => {
   const v = $('video');
   if (!v.videoWidth) return;
-  const sc = Math.min(1, 2000 / Math.max(v.videoWidth, v.videoHeight));
+  const sc = Math.min(1, MAX_SIDE / Math.max(v.videoWidth, v.videoHeight));
   const c = document.createElement('canvas');
   c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
   c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-  shots.push({ canvas: c, name: '拍照 ' + (shots.length + 1) });
-  $('camCount').textContent = '已拍 ' + shots.length + ' 張';
+  shotCnt++;
+  $('camCount').textContent = '已拍 ' + shotCnt + ' 張';
   const t = document.createElement('img'); t.src = c.toDataURL('image/jpeg', 0.3);
   const th = $('camThumbs'); th.prepend(t); while (th.children.length > 4) th.lastChild.remove();
   const f = $('flash'); f.style.opacity = '.8'; setTimeout(() => f.style.opacity = '0', 120);
   if (navigator.vibrate) navigator.vibrate(30);
+  setTimeout(() => enqueue([{ canvas: c, name: '拍照 ' + shotCnt }]), 0);   // 背景開始辨識
 };
 function closeCam() {
   if (stream) stream.getTracks().forEach(t => t.stop());
-  stream = null; $('video').srcObject = null; $('cam').style.display = 'none';
+  stream = null; $('video').srcObject = null; $('cam').style.display = 'none'; camOpen = false;
 }
-$('camCancel').onclick = () => { closeCam(); shots = []; };
-$('camDone').onclick = () => {
-  const pages = shots; shots = []; closeCam();
-  if (pages.length) recognize(pages);
+$('camCancel').onclick = () => {
+  // 丟掉這次相機拍的:還沒送出的請求取消,送出中的結果忽略
+  invoices.slice(camFrom).forEach(x => x.cancelled = true);
+  queue = queue.filter(j => j.idx < camFrom);
+  closeCam(); progress(); maybeFinish();
 };
+$('camDone').onclick = () => { closeCam(); progress(); maybeFinish(); };
 
 function render() {
   const box = $('results'); box.innerHTML = '';
