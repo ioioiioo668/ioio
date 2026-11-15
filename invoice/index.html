@@ -40,6 +40,8 @@
   input.need { background:var(--warn); border-color:#d4a800; }
   .runs { font-size:12px; color:#5b655f; margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
   .runs .x { color:var(--bad); }
+  .ver { margin-top:10px; padding:8px 10px; border-radius:8px; font-size:14px; font-weight:600; }
+  .ver.ok { background:#d7efdc; color:#1f6b3a; } .ver.bad { background:#f8c9c4; color:#9c2a1d; } .ver.warn { background:#fff2b3; color:#7a5b00; }
   .row2 { display:flex; gap:10px; } .row2 > div { flex:1; }
   .item { background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
           display:flex; justify-content:space-between; font-size:14px; }
@@ -464,6 +466,7 @@ function render() {
             ${NUM.includes(k)?'inputmode="decimal"':''}>
           <div class="runs">${runs}</div></div>`;
       }).join('') +
+      `<div class="ver" id="ver${n}"></div>` +
       `<details class="f"><summary class="hint">辨識原文${inv.rot ? '(照片已自動轉 ' + inv.rot + '°)' : ''}</summary>` +
         (inv.texts || []).map((t, i) => t ? `<div class="hint" style="margin-top:6px">${'①②③'[i]}</div><pre style="white-space:pre-wrap;font-size:12px;margin:2px 0 0;background:#f6f7f6;padding:8px;border-radius:8px">${esc(t)}</pre>` : '').join('') +
       `</details>` +
@@ -496,10 +499,29 @@ function render() {
       const tax = Math.round(num(f.net) * 0.05); set('tax', tax); set('total', num(f.net) + tax);
     }
   }));
+  invoices.forEach((inv, n) => verifyCard(n));
+  box.querySelectorAll('input[data-k="net"], input[data-k="tax"], input[data-k="total"]').forEach(el =>
+    el.addEventListener('input', () => verifyCard(Number(el.dataset.n))));
   box.querySelectorAll('img.thumb').forEach(img => img.onclick = () => {
     $('zoomImg').src = img.src; $('zoom').style.display = 'block';
   });
   box.querySelectorAll('select[data-k]').forEach(el => el.addEventListener('change', () => invoices[el.dataset.n].category = el.value));
+}
+
+/* 金額驗算:未稅 + 稅額 = 總計,稅額 = 未稅 × 5%(誤差 1 元內,或 0) */
+function verifyText(f) {
+  const n = v => { v = String(v == null ? '' : v).replace(/[,\s]/g, ''); return v === '' || isNaN(v) ? null : Number(v); };
+  const net = n(f.net), tax = n(f.tax), total = n(f.total);
+  if (net == null || tax == null || total == null) return ['warn', '⚠️ 金額不完整,無法驗算'];
+  if (net + tax !== total) return ['bad', '❌ 未稅 ' + net + ' + 稅額 ' + tax + ' = ' + (net + tax) + ',與總計 ' + total + ' 不符'];
+  const exp = Math.round(net * 0.05);
+  if (tax !== 0 && Math.abs(exp - tax) > 1) return ['bad', '❌ 稅額應約為 ' + exp + '(未稅 × 5%),目前是 ' + tax];
+  return ['ok', '✅ 金額驗算正確:' + net + ' + ' + tax + ' = ' + total];
+}
+function verifyCard(n) {
+  const el = document.getElementById('ver' + n); if (!el) return;
+  const [cls, txt] = verifyText(invoices[n].final);
+  el.className = 'ver ' + cls; el.textContent = txt;
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
