@@ -229,7 +229,7 @@ function variants(src) {
   };
   const span = Math.max(1, hi - lo);
   // ② 加強對比 + 去透字:比墨水門檻淡的(背面透上來的字、紙紋)一律變白,深色的字保留灰階
-  const ghostCut = th - 12;
+  const ghostCut = Math.min(250, th + 15);
   return [src,
           mk(g => g >= ghostCut ? 255 : Math.max(0, (g - lo) * 255 / Math.max(1, ghostCut - lo) * 0.85)),
           mk(g => g > th ? 255 : 0)]
@@ -243,14 +243,43 @@ const norm = (k, v) => {
   if (NUM.includes(k)) { const n = Number(v.replace(/[,\s$NT元]/g, '')); return isNaN(n) ? v : String(n); }
   return v.replace(/\s/g, '').toUpperCase();
 };
+/* 金額三欄一起看:稅額 ≈ 未稅 × 5%(或 0),未稅 + 稅額 = 總計。缺一欄就用另外兩欄補 */
+function money(r) {
+  const n = v => { v = String(v == null ? '' : v).replace(/[,\s$NT元]/g, ''); return v === '' || isNaN(v) ? null : Number(v); };
+  let net = n(r.net), tax = n(r.tax), total = n(r.total);
+  const ok = (nt, tx) => nt > 0 && (Math.abs(Math.round(nt * 0.05) - tx) <= 1 || tx === 0);
+  if (net != null && tax != null && total == null && ok(net, tax)) total = net + tax;
+  if (net != null && total != null && tax == null && ok(net, total - net)) tax = total - net;
+  if (tax != null && total != null && net == null && ok(total - tax, tax)) net = total - tax;
+  const valid = net != null && tax != null && total != null && net + tax === total && ok(net, tax);
+  return { valid, net, tax, total };
+}
+
 function vote(runs) {
   const final = {}, unresolved = [];
+  runs = runs.filter(Boolean);
   FIELDS.forEach(([k]) => {
     const cnt = {};
     runs.forEach(r => { const n = norm(k, r[k]); if (n !== '') (cnt[n] = cnt[n] || []).push(r[k]); });
     const winner = Object.values(cnt).find(a => a.length >= 2);   // 兩組相同即採用(兩次或三次皆適用)
     if (winner) final[k] = String(winner[0]).trim();
     else { final[k] = ''; if (Object.keys(cnt).length || REQUIRED.includes(k)) unresolved.push(k); }
+  });
+  // 金額:多數決沒結果時,採用「三欄彼此算得通」的那一組(手寫金額常常只有一次讀得完整)
+  const M = ['net', 'tax', 'total'];
+  const cur = money(final);
+  if (!cur.valid) {
+    const good = runs.map(money).filter(m => m.valid);
+    const pick = good.sort((x, y) => good.filter(g => g.total === y.total).length - good.filter(g => g.total === x.total).length)[0];
+    if (pick) M.forEach(k => { final[k] = String(pick[k]); });
+  } else {
+    M.forEach(k => { final[k] = String(cur[k]); });
+  }
+  const after = money(final);
+  M.forEach(k => {
+    const i = unresolved.indexOf(k);
+    if (after.valid && i >= 0) unresolved.splice(i, 1);
+    if (!after.valid && i < 0 && REQUIRED.includes(k) && !final[k]) unresolved.push(k);
   });
   return { final, unresolved };
 }
